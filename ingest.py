@@ -83,7 +83,7 @@ def main():
         n_ocr_pages=len(ocr_pages),
         n_ocr_failed_pages=len(failed_pages),
     )
-    main_logger.info(f"Completato: {args.doc_id} v{args.version}"
+    main_logger.info(f"Completato: {args.doc_id} {args.version}"
           + (f" (modello {args.model})" if args.model else ""))
 
 

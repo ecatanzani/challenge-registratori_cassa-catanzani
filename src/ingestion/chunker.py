@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.ingestion.pdf_parser import ImageRef, ParsedDocument
+from src.ingestion.pdf_parser import ParsedDocument
 from src.ingestion.versioning import make_chunk_id
 
 # Riconoscimento della struttura dei capitoli/sezioni/passi

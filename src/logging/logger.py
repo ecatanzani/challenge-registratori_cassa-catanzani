@@ -23,13 +23,3 @@ def setup_main_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     logger.info(
         f"Logger '{logger_name}' initialized at level {logging.getLevelName(level)}")
     return logger
-
-
-def get_logger(name: str | None) -> logging.Logger:
-    """
-    Retrieve the main logger if it exists, otherwise initialize it.
-    """
-    logger = logging.getLogger(name)
-    if not logger.handlers:
-        logger = setup_main_logger(name)
-    return logger

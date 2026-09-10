@@ -9,8 +9,18 @@ from config import settings
 from src.audit.timing import timed
 
 
-def get_chat_model(temperature: float = 0.0):
-    """Ritorna il chat model Anthropic configurato da .env."""
+def get_chat_model():
+    """Ritorna il chat model Anthropic configurato da .env.
+
+    Nessun parametro di campionamento: sui modelli Claude della generazione
+    corrente (famiglia 5, e 4.7/4.8) `temperature`, `top_p` e `top_k` sono
+    stati rimossi dall'API e una richiesta che li contiene viene rifiutata con
+    400 `temperature is deprecated for this model`. La determinismo che qui
+    serviva non e' comunque affidato al campionamento ma all'output
+    strutturato: la risposta e' un oggetto Pydantic validato (StructuredAnswer)
+    e i chunk_id citati vengono verificati contro quelli realmente recuperati
+    in _validate_grounding().
+    """
     from langchain_anthropic import ChatAnthropic
 
     if not settings.anthropic_api_key:
@@ -20,7 +30,6 @@ def get_chat_model(temperature: float = 0.0):
     return ChatAnthropic(
         model=settings.anthropic_model,
         api_key=settings.anthropic_api_key,
-        temperature=temperature,
         max_tokens=2048,
     )
 

@@ -24,24 +24,16 @@ def parse_version(version: str | None) -> tuple[int, ...]:
     return tuple(parts) or (0,)
 
 
-def is_older(version: str | None, than: str | None) -> bool:
-    return parse_version(version) < parse_version(than)
-
-
-def latest_of(versions) -> str | None:
-    """La piu' recente fra le versioni date, o None se la sequenza e' vuota."""
-    versions = [v for v in versions if v is not None]
-    if not versions:
-        return None
-    return max(versions, key=parse_version)
-
-
 def version_slug(version: str) -> str:
     """Versione in forma utilizzabile dentro un identificatore ('0.3' -> '0-3')."""
     return re.sub(r"[^A-Za-z0-9]+", "-", str(version)).strip("-")
 
 
 def make_chunk_id(doc_id: str, version: str, counter: int) -> str:
-    """Identificatore stabile di un chunk, che include la versione del manuale: `printf_f_v0-3_c0012`.
+    """Identificatore stabile di un chunk, che include la versione del manuale: `printf_f_v03_c0012`.
+
+    Nessun prefisso letterale davanti alla versione: e' la stringa passata a
+    `--version` a portarlo, se lo prevede. Aggiungerlo qui lo raddoppiava
+    (`printf_f_vv03_...`) su ogni identificatore persistito.
     """
-    return f"{doc_id}_v{version_slug(version)}_c{counter:04d}"
+    return f"{doc_id}_{version_slug(version)}_c{counter:04d}"

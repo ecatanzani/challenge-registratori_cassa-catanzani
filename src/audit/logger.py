@@ -1,15 +1,6 @@
 """
-Audit log locale (JSONL, append-only) per tracciabilita': query, chunk_id
-consultati, versioni documento, esito (fallback si'/no), latenza. Requisito
-funzionale esplicito del brief ("Log di audit ... per tracciabilita'").
-
-Include anche compute_metrics() per calcolare le metriche osservabili
-richieste nella sezione "Performance & Operativita'" del brief: latency,
-hit@k (qui interpretata come "almeno un chunk sopra soglia" come proxy,
-raffinabile con un eval set etichettato, vedi scripts/eval.py), tasso di
-immagini allegate, tasso di fallback.
+Audit log locale (JSONL, append-only) per tracciabilità
 """
-from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
