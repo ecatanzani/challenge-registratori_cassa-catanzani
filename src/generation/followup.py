@@ -36,5 +36,5 @@ def componi_query(domanda_in_sospeso: str | None, testo: str) -> str:
     """
     testo = testo.strip()
     if domanda_in_sospeso and sembra_risposta_a_chiarimento(testo):
-        return f"{testo} — {domanda_in_sospeso.rstrip(' ?')}"
+        return f"{domanda_in_sospeso.rstrip(' ?')} — {testo}"
     return testo

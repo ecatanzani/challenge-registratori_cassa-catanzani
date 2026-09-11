@@ -144,15 +144,6 @@ class FinalAnswer(BaseModel):
     @field_serializer("understanding")
     def _understanding_senza_expanded(self, valore: NormalizedQuery | None):
         """Serializza la NormalizedQuery escludendo `expanded`.
-
-        `expanded` e' la query con tutti i sinonimi appesi, costruita per
-        BM25: un artefatto interno che su domande con piu' famiglie
-        riconosciute supera i 500 caratteri. Farlo uscire significherebbe
-        scriverlo nell'audit log ad ogni domanda e serializzarlo verso una UI
-        che non lo usa. Tutto il resto della NormalizedQuery e' invece
-        esattamente cio' che serve al pannello di trasparenza, quindi si
-        incapsula la dataclass e si toglie un campo — invece di mantenere un
-        secondo modello quasi identico solo per ometterlo.
         """
         if valore is None:
             return None

@@ -72,13 +72,13 @@ def _validate_grounding(
     answer: StructuredAnswer, chunks: list[RetrievedChunk]
 ) -> StructuredAnswer:
     """Rimuove qualsiasi step/warning che citi un chunk_id non realmente
-    presente tra i chunk recuperati: questo e' il guardrail anti-allucinazione
-    strutturale, non delegato solo al prompt."""
+    presente tra i chunk recuperati: guardrail anti-allucinazione
+    strutturale"""
     valid_ids = {c.document.metadata.get("chunk_id") for c in chunks}
     kept_steps = [s for s in answer.steps if s.chunk_id in valid_ids]
 
     if answer.steps and not kept_steps:
-        # Il modello ha citato solo chunk_id inesistenti: non ci fidiamo, fallback.
+        # Il modello ha citato chunk_id inesistenti
         return StructuredAnswer(
             fallback=True,
             related_faqs=answer.related_faqs or faqs_from_chunks(chunks),
@@ -89,24 +89,6 @@ def _validate_grounding(
     answer.steps = kept_steps
     answer.warnings = kept_warnings
     return answer
-
-
-def _log_budget_check(retrieval_ms: int, time_to_first_token_ms: int | None, total_ms: int) -> None:
-    """Confronta i tempi misurati con i budget"""
-    if not settings.debug_timing_logs:
-        return
-    rid = current_request_id() or "--------"
-    verdict_retrieval = "OK" if retrieval_ms < RETRIEVAL_BUDGET_MS else "SFORATO"
-    print(f"[BUDGET][{rid}] retrieval: {retrieval_ms} ms "
-          f"(target <{RETRIEVAL_BUDGET_MS} ms) -> {verdict_retrieval}")
-    if time_to_first_token_ms is not None:
-        print(f"[BUDGET][{rid}] primo token dalla domanda: {time_to_first_token_ms} ms")
-    else:
-        print(f"[BUDGET][{rid}] primo token: non misurato in questa richiesta "
-              f"(fallback prima della generazione o stream non disponibile)")
-    verdict_total = "OK" if total_ms < E2E_BUDGET_MS else "SFORATO"
-    print(f"[BUDGET][{rid}] risposta completa: {total_ms} ms "
-          f"(target <{E2E_BUDGET_MS} ms) -> {verdict_total}")
 
 
 def _chunk_views(chunks: list[RetrievedChunk]) -> list[RetrievedChunkView]:
@@ -230,7 +212,6 @@ def answer_query(raw_query: str) -> FinalAnswer:
         # Nessuna chiamata LLM: la domanda e' fuori dal dominio dei manuali indicizzati
         retrieval_ms = int((time.perf_counter() - t0) * 1000)
         latency_ms = retrieval_ms
-        _log_budget_check(retrieval_ms, None, latency_ms)
         final = FinalAnswer(
             query=raw_query,
             steps=[], citations=[], images=[], warnings=[],
@@ -260,7 +241,6 @@ def answer_query(raw_query: str) -> FinalAnswer:
 
     if retrieval.ambiguous:
         latency_ms = int((time.perf_counter() - t0) * 1000)
-        _log_budget_check(retrieval_ms, None, latency_ms)
         final = FinalAnswer(
             query=raw_query,
             steps=[], citations=[], images=[], warnings=[],
@@ -296,8 +276,7 @@ def answer_query(raw_query: str) -> FinalAnswer:
 
     latency_ms = int((time.perf_counter() - t0) * 1000)
     time_to_first_token_ms = int(first_token_s * 1000) if first_token_s is not None else None
-    _log_budget_check(retrieval_ms, time_to_first_token_ms, latency_ms)
-
+    
     final = FinalAnswer(
         query=raw_query,
         steps=structured.steps,
