@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 1370" width="980" height="1370" role="img" aria-label="Architettura del sistema: l&#x27;ingestion trasforma il manuale PDF in tre archivi (Chroma, corpus BM25, SQLite); l&#x27;app Streamlit passa ogni domanda ad answer_query, che normalizza, cerca in modo ibrido, fonde, riordina e genera con Claude una risposta ancorata ai chunk, con citazioni e immagini." font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">
+<title>Architettura del sistema: l&#x27;ingestion trasforma il manuale PDF in tre archivi (Chroma, corpus BM25, SQLite); l&#x27;app Streamlit passa ogni domanda ad answer_query, che normalizza, cerca in modo ibrido, fonde, riordina e genera con Claude una risposta ancorata ai chunk, con citazioni e immagini.</title>
+<defs><marker id="a-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker><marker id="a-disk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b45309"/></marker><marker id="a-exit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker></defs>
+<rect x="0" y="0" width="980" height="1370" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<rect x="16" y="16" width="948" height="154" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="32" y="38" font-size="12.5" text-anchor="start"><tspan font-weight="700" fill="#1d4ed8" letter-spacing="0.6">INGESTION</tspan><tspan fill="#475569">  ·  offline  ·  python ingest.py</tspan></text>
+<path d="M32,70.0 h182 l14,14 v54 h-196 z" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+<path d="M214,70.0 v14 h14" fill="none" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="130.0" y="92.0" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Manuale PDF</text>
+<text x="130.0" y="108.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">data/manuals</text>
+<text x="130.0" y="124.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">doc-id · versione · modello</text>
+<rect x="272" y="54.0" width="196" height="100" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="370.0" y="76.0" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">parse_pdf</text>
+<text x="370.0" y="92.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">testo nativo per pagina</text>
+<text x="370.0" y="108.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">header e footer rimossi</text>
+<text x="370.0" y="124.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">OCR se manca il testo</text>
+<text x="370.0" y="140.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">immagini + bounding box</text>
+<rect x="512" y="54.0" width="196" height="100" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="610.0" y="76.0" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">chunk_document</text>
+<text x="610.0" y="92.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">un chunk per sezione</text>
+<text x="610.0" y="108.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">max 900 caratteri</text>
+<text x="610.0" y="124.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">figure della sezione</text>
+<text x="610.0" y="140.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">chunk_id con la versione</text>
+<rect x="752" y="62.0" width="196" height="84" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="850.0" y="84.0" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">index_chunks</text>
+<text x="850.0" y="100.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">embedding</text>
+<text x="850.0" y="116.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">multilingual-e5-large</text>
+<text x="850.0" y="132.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">prefisso «passage:»</text>
+<polyline points="231,104.0 268,104.0" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="471,104.0 508,104.0" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="711,104.0 748,104.0" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<rect x="16" y="190" width="700" height="1164" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="32" y="212" font-size="12.5" text-anchor="start"><tspan font-weight="700" fill="#334155" letter-spacing="0.6">SERVING</tspan><tspan fill="#475569">  ·  streamlit run app.py</tspan></text>
+<text x="32" y="230" font-size="11" font-weight="normal" fill="#475569" text-anchor="start">all&#x27;avvio: warm-up di e5 e del cross-encoder</text>
+<rect x="28" y="394" width="676" height="870" rx="9" fill="#f0fdf4" stroke="#86efac"/>
+<text x="42" y="416" font-size="12.5" text-anchor="start"><tspan font-weight="700" fill="#15803d" letter-spacing="0.6">INFERENZA</tspan><tspan fill="#475569">  ·  answer_query()</tspan></text>
+<rect x="280.0" y="240" width="260" height="52" rx="7" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
+<text x="410.0" y="262" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Domanda dell&#x27;operatore</text>
+<text x="410.0" y="278" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">campo di testo + Chiedi</text>
+<rect x="280.0" y="308" width="260" height="68" rx="7" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
+<text x="410.0" y="330" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">componi_query</text>
+<text x="410.0" y="346" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">completa la domanda in sospeso</text>
+<text x="410.0" y="362" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">se la risposta è un chiarimento</text>
+<rect x="280.0" y="430" width="260" height="68" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="452" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">normalize_query</text>
+<text x="410.0" y="468" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">refusi (rapidfuzz) · sinonimi</text>
+<text x="410.0" y="484" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">codici errore · modello, firmware</text>
+<rect x="280.0" y="514" width="260" height="52" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="536" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Ricerca densa</text>
+<text x="410.0" y="552" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">e5, prefisso «query:» · top 8</text>
+<polygon points="410,582.0 515.0,618.0 410,654.0 305.0,618.0" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410" y="616.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Gate di dominio</text>
+<text x="410" y="633.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">coseno ≥ soglia?</text>
+<rect x="280.0" y="670" width="260" height="52" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="692" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">BM25</text>
+<text x="410.0" y="708" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">query espansa · top 8</text>
+<rect x="280.0" y="738" width="260" height="84" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="760" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Fusione RRF</text>
+<text x="410.0" y="776" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">filtro sul modello, se indicato</text>
+<text x="410.0" y="792" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">pesi 0,6 / 0,4 · top 5</text>
+<text x="410.0" y="808" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">versioni vecchie penalizzate</text>
+<polygon points="410,838.0 515.0,874.0 410,910.0 305.0,874.0" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410" y="872.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Più modelli</text>
+<text x="410" y="889.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">fra i candidati?</text>
+<rect x="280.0" y="926" width="260" height="68" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="948" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Reranker</text>
+<text x="410.0" y="964" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">cross-encoder mMiniLM</text>
+<text x="410.0" y="980" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">punteggio 0–1 (sigmoide)</text>
+<rect x="280.0" y="1010" width="260" height="68" rx="7" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.4"/>
+<text x="410.0" y="1032" font-size="13.5" font-weight="700" fill="#4c1d95" text-anchor="middle">Claude Sonnet 5</text>
+<text x="410.0" y="1048" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">output strutturato: passi + chunk_id</text>
+<text x="410.0" y="1064" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">oppure fallback con FAQ</text>
+<rect x="280.0" y="1094" width="260" height="68" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="1116" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Validazione grounding</text>
+<text x="410.0" y="1132" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">scarta i passi con chunk_id</text>
+<text x="410.0" y="1148" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">non recuperati</text>
+<rect x="280.0" y="1178" width="260" height="68" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="410.0" y="1200" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Citazioni e immagini</text>
+<text x="410.0" y="1216" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">figure delle sezioni citate</text>
+<text x="410.0" y="1232" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">ritaglio + pagina evidenziata</text>
+<rect x="280.0" y="1270" width="260" height="68" rx="7" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
+<text x="410.0" y="1292" font-size="13.5" font-weight="700" fill="#0f172a" text-anchor="middle">Risposta</text>
+<text x="410.0" y="1308" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">procedura · citazioni · immagini</text>
+<text x="410.0" y="1324" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">pannello «Perché questa risposta?»</text>
+<polyline points="410,293 410,305" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,377 410,427" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,499 410,511" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,567 410,579" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,655 410,667" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,723 410,735" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,823 410,835" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,911 410,923" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,995 410,1007" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,1079 410,1091" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,1163 410,1175" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<polyline points="410,1247 410,1267" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<text x="418" y="665" font-size="11.5" font-weight="normal" fill="#334155" text-anchor="start">sì</text>
+<text x="418" y="921" font-size="11.5" font-weight="normal" fill="#334155" text-anchor="start">no</text>
+<rect x="50" y="592.0" width="168" height="52" rx="7" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+<text x="134.0" y="614.0" font-size="13.5" font-weight="700" fill="#991b1b" text-anchor="middle">Fuori tema</text>
+<text x="134.0" y="630.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">rifiuto + FAQ dall&#x27;indice</text>
+<polyline points="305,618.0 221,618.0" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#a-exit)"/>
+<text x="261.5" y="612.0" font-size="11.5" font-weight="normal" fill="#991b1b" text-anchor="middle">sotto soglia</text>
+<polyline points="50,618.0 36,618.0" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+<rect x="50" y="848.0" width="168" height="52" rx="7" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+<text x="134.0" y="870.0" font-size="13.5" font-weight="700" fill="#991b1b" text-anchor="middle">Chiarimento</text>
+<text x="134.0" y="886.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">quale modello?</text>
+<polyline points="305,874.0 221,874.0" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#a-exit)"/>
+<text x="261.5" y="868.0" font-size="11.5" font-weight="normal" fill="#991b1b" text-anchor="middle">sì</text>
+<polyline points="50,874.0 36,874.0" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+<polyline points="36,618.0 36,1304.0 277.0,1304.0" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#a-exit)"/>
+<text x="158.0" y="1298.0" font-size="11.5" font-weight="normal" fill="#991b1b" text-anchor="middle">senza chiamare l&#x27;LLM</text>
+<rect x="732" y="466.0" width="232" height="358.0" rx="10" fill="#fffbeb" stroke="#fcd34d"/>
+<text x="748" y="488.0" font-size="12.5" text-anchor="start"><tspan font-weight="700" fill="#b45309" letter-spacing="0.6">INDICE</tspan><tspan fill="#475569">  ·  data/vectorstore</tspan></text>
+<path d="M750,519.0 a100.0,7 0 0,1 200,0 v42 a100.0,7 0 0,1 -200,0 z" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+<path d="M750,519.0 a100.0,7 0 0,0 200,0" fill="none" stroke="#d97706" stroke-width="1.4"/>
+<text x="850.0" y="544.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Chroma</text>
+<text x="850.0" y="559.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">vettori, distanza coseno</text>
+<path d="M750,675.0 a100.0,7 0 0,1 200,0 v42 a100.0,7 0 0,1 -200,0 z" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+<path d="M750,675.0 a100.0,7 0 0,0 200,0" fill="none" stroke="#d97706" stroke-width="1.4"/>
+<text x="850.0" y="700.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">bm25_corpus.jsonl</text>
+<text x="850.0" y="715.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">testo e metadati dei chunk</text>
+<path d="M750,759.0 a100.0,7 0 0,1 200,0 v42 a100.0,7 0 0,1 -200,0 z" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+<path d="M750,759.0 a100.0,7 0 0,0 200,0" fill="none" stroke="#d97706" stroke-width="1.4"/>
+<text x="850.0" y="784.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">SQLite</text>
+<text x="850.0" y="799.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">versioni · bounding box</text>
+<polyline points="850.0,147.0 850.0,463.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="858.0" y="318.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="start">scrive vettori,</text>
+<text x="858.0" y="332.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="start">corpus e metadati</text>
+<polyline points="750,540.0 543.0,540.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="632.0" y="534.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="middle">vettori</text>
+<polyline points="750,696.0 543.0,696.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="632.0" y="690.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="middle">corpus lessicale</text>
+<polyline points="750,780.0 543.0,780.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="632.0" y="774.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="middle">versione più recente</text>
+<polyline points="724,780.0 724,1212.0 543.0,1212.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<circle cx="724" cy="780.0" r="3" fill="#b45309"/>
+<text x="632.0" y="1206.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="middle">bounding box · PDF</text>
+<rect x="732" y="1234" width="232" height="112" rx="10" fill="#fffbeb" stroke="#fcd34d"/>
+<text x="748" y="1256" font-size="12.5" text-anchor="start"><tspan font-weight="700" fill="#b45309" letter-spacing="0.6">LOG</tspan><tspan fill="#475569">  ·  data/</tspan></text>
+<path d="M750,1283.0 a100.0,7 0 0,1 200,0 v42 a100.0,7 0 0,1 -200,0 z" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+<path d="M750,1283.0 a100.0,7 0 0,0 200,0" fill="none" stroke="#d97706" stroke-width="1.4"/>
+<text x="850.0" y="1308.0" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">audit_log.jsonl</text>
+<text x="850.0" y="1323.0" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">esito, chunk, tempi</text>
+<polyline points="660,1264 660,1304.0 747,1304.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="652" y="1288.0" font-size="11.5" font-weight="normal" fill="#92400e" text-anchor="end">scrive</text>
+<rect x="740" y="842.0" width="216" height="104" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+<polyline points="748,864.0 778,864.0" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#a-flow)"/>
+<text x="790" y="868.0" font-size="11.5" font-weight="normal" fill="#0f172a" text-anchor="start">flusso di una domanda</text>
+<polyline points="748,886.0 778,886.0" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#a-disk)"/>
+<text x="790" y="890.0" font-size="11.5" font-weight="normal" fill="#0f172a" text-anchor="start">lettura / scrittura su disco</text>
+<polyline points="748,908.0 778,908.0" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#a-exit)"/>
+<text x="790" y="912.0" font-size="11.5" font-weight="normal" fill="#0f172a" text-anchor="start">risposta senza LLM</text>
+<polygon points="764,922.0 776,930.0 764,938.0 752,930.0" fill="#ffffff" stroke="#16a34a" stroke-width="1.4"/>
+<text x="790" y="934.0" font-size="11.5" font-weight="normal" fill="#0f172a" text-anchor="start">decisione</text>
+</svg>

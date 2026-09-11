@@ -1,16 +1,3 @@
-# Python >= 3.11. Istruzioni complete di installazione: INSTALL.md
-#
-#   python3 -m venv .venv
-#   source .venv/bin/activate
-#   python -m pip install --upgrade pip
-#   pip install -r requirements.txt
-#
-# Serve anche il binario tesseract per l'OCR di fallback (vedi INSTALL.md):
-# non e' un pacchetto Python e pip non lo installa.
-#
-# I vincoli sono "minimo la versione verificata, sotto il major successivo":
-# l'ambiente e' riproducibile senza restare inchiodato alle patch release.
-
 # Parsing PDF e OCR
 pymupdf>=1.28,<2
 pytesseract>=0.3.13,<0.4
@@ -41,7 +28,5 @@ pandas>=3.0,<4
 # Configurazione da .env
 pydantic-settings>=2.15,<3
 
-# Strumenti di analisi in scripts/ (non usati dal sistema a runtime).
-# langchain-experimental serve solo a compare_chunking.py per SemanticChunker.
-# Sta qui, e non in un requirements separato, perche' l'ambiente e' uno solo.
+# Strumenti di analisi in scripts
 langchain-experimental>=0.4.2,<0.5
