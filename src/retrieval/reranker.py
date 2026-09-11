@@ -1,12 +1,9 @@
 """
-Re-ranking opzionale con cross-encoder multilingue: la fusion BM25+dense da'
-un buon recall ma un ranking approssimativo (proxy sul rank, non uno score
-di rilevanza vero). Il cross-encoder guarda (query, chunk) insieme e da' un
-punteggio di rilevanza molto piu' preciso per il top-N, a costo di qualche
-decina di ms extra: lo applichiamo solo sui top_k_final*2 candidati, non su
-tutto il corpus, per restare dentro il budget di latenza (TTFT < 2s).
+Re-ranking con cross-encoder multilingue sui chunk scelti dalla fusione RRF.
 """
 from functools import lru_cache
+
+import numpy as np
 
 from config import settings
 from src.audit.timing import timed
@@ -32,7 +29,8 @@ def rerank(query: str, chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
 
     with timed(f"rerank.predict ({len(chunks)} candidati)"):
         pairs = [(query, c.document.page_content) for c in chunks]
-        scores = model.predict(pairs)
+        # Estrazione dello score tramite sigmoide
+        scores = 1 / (1 + np.exp(-model.predict(pairs)))
         reranked = [
             RetrievedChunk(document=c.document, score=float(s)) for c, s in zip(chunks, scores)
         ]

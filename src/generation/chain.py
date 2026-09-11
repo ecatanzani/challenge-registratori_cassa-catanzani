@@ -289,10 +289,7 @@ def answer_query(raw_query: str) -> FinalAnswer:
 
     with timed("immagini.ritaglio_totale"):
         citations, images = _build_citations_and_images(structured, chunks)
-
-    # Se il modello ha dichiarato fallback senza proporre FAQ, le costruiamo
-    # dai chunk realmente recuperati: sono correlate alla domanda per
-    # costruzione, e non dipendono dalla buona volonta' del modello.
+    
     related_faqs = structured.related_faqs
     if structured.fallback and not related_faqs:
         related_faqs = faqs_from_chunks(chunks, limit=3)
