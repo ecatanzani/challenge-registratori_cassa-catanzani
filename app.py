@@ -25,7 +25,7 @@ def _etichetta_citazione(c, grassetto: bool = False) -> str:
     """Provenienza di una citazione: documento, versione, pagina, sezione.
     """
     testo = (f"{c.doc_id}"
-             + (f" v{c.version}" if c.version else "")
+             + (f" {c.version}" if c.version else "")
              + f" · p.{c.page}"
              + (f" · {c.section_title}" if c.section_title else ""))
     return f"**[{testo}]**" if grassetto else f"📄 {testo}"
