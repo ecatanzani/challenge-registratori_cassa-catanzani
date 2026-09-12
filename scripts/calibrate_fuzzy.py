@@ -1,4 +1,7 @@
-"""Curva della soglia fuzzy: refusi recuperati contro testo corretto riscritto, al variare di FUZZY_THRESHOLD.
+"""Curva della soglia fuzzy usata per riconoscere i termini di dominio: refusi
+ricondotti al termine giusto contro testo corretto scambiato per un termine, al
+variare di FUZZY_THRESHOLD. La correzione dei refusi non passa da qui (vedi
+docs/normalizzazione-query.md).
 """
 
 import json
@@ -18,8 +21,8 @@ SOGLIE = (70, 75, 80, 82, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 95)
 
 
 def finestre_corrette() -> set[str]:
-    """Finestre di 2-3 parole del testo indicizzato: italiano corretto, che il
-    correttore non deve toccare."""
+    """Finestre di 2-3 parole del testo indicizzato: italiano corretto, che non
+    deve essere scambiato per un termine di dominio."""
     finestre = set()
     with open(settings.vectorstore_dir / "bm25_corpus.jsonl", encoding="utf-8") as f:
         for riga in f:
