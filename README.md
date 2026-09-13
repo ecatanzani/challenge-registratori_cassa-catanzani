@@ -2,13 +2,13 @@
 
 Challenge per la realizzazione di un sistema RAG per registratori di cassa.
 
-Il sistema permette agli utenti di effettaure delle domande, generiche o specifiche, per ottenre supporto in merito all'utilizzo di registratori di cassa.
+Il sistema permette agli utenti di effettuare delle domande, generiche o specifiche, per ottenere supporto in merito all'utilizzo di registratori di cassa.
 
 Il sistema include il codice per servire una pagina web, attraverso la quale l'utente interagirà con il sistema.
 
 ## Descrizione generale del sistema
 
-Il sistema ralizzato può essere sintetizzato con il seguente schema:
+Il sistema realizzato può essere sintetizzato con il seguente schema:
 
 ![Schema dei componenti: ingestion, indice, inferenza e serving](docs/architettura.svg)
 
@@ -20,11 +20,11 @@ Il sistema ralizzato può essere sintetizzato con il seguente schema:
 - Embedding del testo
 - Vector Store (Chroma DB)
 - Corpus di BM25 (JSONL)
-- Database SQLite ver versioni, immagini e bounding box
+- Database SQLite per versioni, immagini e bounding box
 
 #### Inferenza
 
-- Nomalizzazione della query (correzione errori - ricerca termini simili)
+- Normalizzazione della query (correzione errori - ricerca termini simili)
 - Ricerca densa
 - Gate di dominio (per reiezione domande off-topic)
 - Ricerca semantica
@@ -179,11 +179,11 @@ e condizioni della misura sono in [docs/valutazione-prestazioni.md](docs/valutaz
 
 La cartella `scripts` contiene strumenti di indagine, non codice di produzione: non partecipano al funzionamento del sistema, ma le loro dipendenze sono incluse in `requirements.txt`.
 
-[calibrate_threshold.py](scripts/calibrate_threshold.py) calcola la soglia delgate di dominio (`OFF_TOPIC_SIMILARITY_THRESHOLD`). Va rilanciato dopo ogni re-ingestione, per accorgersi se i punteggi
+[calibrate_threshold.py](scripts/calibrate_threshold.py) calcola la soglia del gate di dominio (`OFF_TOPIC_SIMILARITY_THRESHOLD`). Va rilanciato dopo ogni re-ingestione, per accorgersi se i punteggi
 si sono spostati; il criterio dietro la formula è spiegato dettagliatamente in [docs/soglia-gate-dominio.md](docs/soglia-gate-dominio.md).
 
 [calibrate_fuzzy.py](scripts/calibrate_fuzzy.py) misura, al variare di
-`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di dominio giusto e quanto testo corretto del manuale viene riscritto I risultati e le motivazioni dietro la scelta dellasoglia sono spiegate in
+`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di dominio giusto e quanto testo corretto del manuale viene riscritto I risultati e le motivazioni dietro la scelta della soglia sono spiegate in
 [docs/normalizzazione-query.md](docs/normalizzazione-query.md).
 
 [compare_chunking.py](scripts/compare_chunking.py) mette a confronto, sulle stesse pagine e con lo stesso modello di embedding, il chunking strutturato adottato dal progetto e il `SemanticChunker` di LangChain, riportando per entrambi numero di chunk, lunghezze e quota di blocchi con un titolo di sezione riconosciuto.
