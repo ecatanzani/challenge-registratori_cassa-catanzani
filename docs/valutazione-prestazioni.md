@@ -1,0 +1,136 @@
+# Valutazione delle prestazioni
+
+Questa pagina riporta le metriche di riferimento del sistema e i tempi di
+risposta, misurati sul codice attuale con `scripts/eval.py`.
+
+## Come si riproduce
+
+```bash
+python scripts/eval.py
+```
+
+Lo script interroga il sistema completo, LLM compreso, su tutte le domande
+dell'eval set e confronta le risposte con le etichette. Ogni domanda passa da
+`answer_query()` e lascia una riga nell'audit log. Il file di audit viene creato alla prima esecuzione del codice (se non esiste) e poi aggiornato incrementalmente. Questo file riporta al suo interno tutte le informaizoni in merito alle prestaizoni del sistema, comprensivo della query dell'utente.
+
+Le medie e i percentili dei tempi riportati qui sotto sono calcolati proprio da quell'audit log, che per ogni domanda registra tempo di retrieval, tempo al primo token e tempo totale.
+
+## Condizioni della misura
+
+| | |
+|---|---|
+| eval set | `eval/eval_set.jsonl`, 40 domande etichettate |
+| manuale indicizzato | `printf_f` v03, 73 pagine, 195 chunk, 17 immagini |
+| modello di risposta | `claude-sonnet-5` |
+| embedding | `intfloat/multilingual-e5-large` |
+| reranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` |
+| candidati | 8 densi, 8 BM25, 5 dopo la fusione |
+| soglia del gate di dominio | 0.8 |
+
+L'eval set ha tre classi:
+
+| classe | domande | comportamento atteso |
+|---|---|---|
+| `rispondibile` | 24 (di cui 2 con refusi) | risposta con i passi della procedura |
+| `vicina_non_documentata` | 10 | argomento del negozio ma assente dal manuale: fallback con FAQ |
+| `fuori_tema` | 6 | estranea al dominio: rifiuto |
+
+## Metriche di riferimento
+
+### Retrieval
+
+Le prestazioni del retrieval sono state calcolate sulle 24 domande con risposta: viene valutato se, fra i frammenti recuperati dopo il reranker, ce n'è uno di una pagina attesa.
+
+| metrica | valore | cosa misura |
+|---|---|---|
+| hit@1 | 19/24 (79%) | il primo frammento è di una pagina giusta |
+| hit@3 | 23/24 (96%) | ce n'è uno giusto fra i primi tre |
+| **hit@5** | **24/24 (100%)** | ce n'è uno giusto fra i cinque passati all'LLM |
+| MRR | 0.872 | media di 1/posizione del primo frammento giusto |
+
+Hit@5 è la metrica più importante: sono i cinque frammenti che l'LLM riceve; se la pagina giusta è fra quelli il modello ha il materiale per rispondere.
+
+MRR sta per *Mean Reciprocal Rank*; è una metrica usata nei sistemi di Information Retrieval e RAG per valutare la capacità del sistema di posizionare il primo risultato pertinente il più in alto possibile nella classifica.
+
+### Decisioni: rispondere, fare fallback, rifiutare
+
+Il sistema può decidere di comportarsi in uno dei seguenti modi:
+
+- Rispondere: se la query passa il gate di dominio
+- Fallback: se la query passa il gate di dominio ma la query non è aderente al manuale
+- Rifiutare di rispondere: se la query non passa il gate di dominio
+
+
+| classe | decisioni corrette |
+|---|---|
+| `rispondibile` | 24/24 |
+| `vicina_non_documentata` | 9/10 |
+| `fuori_tema` | 6/6 |
+| **complessivo** | **39/40 (98%)** |
+
+L'unico errore è *«Come aggiungo un nuovo operatore al gestionale di
+magazzino?»
+
+Errore noto: risposta sull'oggetto sbagliato. Su «Come aggiungo un nuovo operatore al gestionale di magazzino?» il sistema risponde con la procedura di programmazione degli operatori del registratore (p.21), invece di fare fallback. L'errore è sistematico, ovvero avvienbe in tutte le esecuzioni. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
+
+Una possibile soluzione potrebbe essere la seguente:
+
+Aggiungere a `StructuredAnswer` un campo che obblighi il modello a pronunciarsi sulla copertura, per esempio stesso_oggetto: bool, con una descrizione come "True se i frammenti descrivono proprio il sistema nominato nella domanda; False se descrivono solo qualcosa di omonimo, come gli operatori della cassa invece che del gestionale". Se è False, `chain.py` trasforma la risposta in fallback, con un chiarimento mirato.
+
+### Immagini
+
+| metrica | valore |
+|---|---|
+| figure attese allegate alla risposta | 12/12 (100%) |
+
+Una figura conta se viene allegata da una delle pagine attese, fino al numero di
+figure che la domanda richiede.
+
+### Robustezza ai refusi
+
+Misurata a parte, perché l'eval set contiene quasi solo domande scritte bene.
+
+| prova | risultato |
+|---|---|
+| le 24 domande con risposta, con un refuso iniettato nella parola più lunga | hit@1 20, hit@5 24, MRR 0.910 |
+| 17 domande nuove scritte male, confrontate con la stessa domanda scritta bene | stesso primo frammento 17/17, frammenti in comune 83/85 |
+
+Il procedimento e il confronto con il correttore
+precedente sono spiegate nel dettaglio in [normalizzazione-query.md](normalizzazione-query.md).
+
+## Tempi di risposta
+
+I budget indicati sono 2 s per il retrieval e 8 s per la risposta
+completa.
+
+### A regime
+
+Esclusa la prima domanda dell'esecuzione, che carica i modelli (vedi sotto).
+
+| fase | media | mediana | p90 | massimo |
+|---|---|---|---|---|
+| retrieval | **477 ms** | 206 ms | 1023 ms | 2479 ms |
+| primo token dell'LLM, dalla domanda | **1462 ms** | 1260 ms | 1964 ms | 4051 ms |
+| risposta completa | **4832 ms** | 4811 ms | 7486 ms | 9207 ms |
+
+Il tempo al primo token è misurato dall'arrivo della domanda, quindi comprende
+anche il retrieval; è calcolato sulle 34 domande che arrivano all'LLM.
+
+### Per tipo di risposta
+
+| percorso | domande | media | mediana | massimo |
+|---|---|---|---|---|
+| risposta con i passi della procedura | 24 | 6151 ms | 5918 ms | 9207 ms |
+| fallback deciso dall'LLM | 10 | 4042 ms | 3994 ms | 4424 ms |
+| fermata dal gate, senza LLM | 5 | 78 ms | 50 ms | 123 ms |
+
+La risposta completa dipende soprattutto dalla generazione: una procedura con
+passi, citazioni e immagini richiede circa 2 secondi in più di un fallback. Le
+domande fermate dal gate costano meno di un decimo di secondo.
+
+### Variabilità
+
+I tempi dell'LLM cambiano da un'esecuzione all'altra. Sulle sei esecuzioni
+complete dell'eval fatte durante lo sviluppo, con lo stesso eval set e versioni
+che differivano solo nella correzione dei refusi, la mediana della risposta
+completa è andata da 4435 a 5087 ms.

@@ -45,7 +45,7 @@ Il sistema ralizzato può essere sintetizzato con il seguente schema:
 ## Setup
 
 Creazione dell'ambiente e installazione delle dipendenze: [INSTALL.md](INSTALL.md).
-In alternativa, senza installare nulla oltre a Docker: [Esecuzione con Docker](#esecuzione-con-docker).
+In alternativa, senza installare nulla oltre a Docker: [Avvio del sistema con Docker](#avvio-del-sistema-con-docker).
 
 ## Configurazione
 
@@ -110,7 +110,20 @@ con il corpus dei chunk per BM25, SQLite per versioning dei manuali e bounding
 box delle immagini. Per ripartire da zero e' sufficiente cancellare quella
 cartella e rilanciare il comando.
 
-## Serving del sistema tramite Streamlit
+Il sistema risponde **a turno singolo**: ogni domanda viene interpretata da
+sola, senza storico della conversazione. La scelta e' deliberata — il prompt
+resta corto e verificabile, e la risposta e' sempre riconducibile ai soli chunk
+citati. Il sistema è istruito a chiedere un chiarimento quando il contesto non basta.
+
+## Avvio del sistema da ambiente python locale
+
+Prima di avviare il sistema è necessario effettuare l'ingestion dei dati, tramite il seguente comando:
+
+```python
+python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f --version v03 --model "PRINT! F"
+```
+
+Al termine del processo è possibile avviare il server web tramite il seguente comando:
 
 ```bash
 streamlit run app.py --server.fileWatcherType none
@@ -119,80 +132,58 @@ streamlit run app.py --server.fileWatcherType none
 Il flag spegne il file watcher di Streamlit, che serve solo a ricaricare l'app
 quando si modifica il codice.
 
-Il sistema risponde **a turno singolo**: ogni domanda viene interpretata da
-sola, senza storico della conversazione. La scelta e' deliberata — il prompt
-resta corto e verificabile, e la risposta e' sempre riconducibile ai soli chunk
-citati. Il sistema è istruito a chiedere un chiarimento quando il contesto non basta.
+## Avvio del sistema con Docker
 
-## Esecuzione con Docker
-
-L'immagine contiene gia' Python, le dipendenze e Tesseract con la lingua
-italiana. Serve solo il file `.env` descritto in [Configurazione](#configurazione).
-Requisiti di memoria e disco, passi completi e comandi di manutenzione sono in
-[INSTALL.md](INSTALL.md#5-alternativa-esecuzione-con-docker).
+Prima di avviare il sistema è necessario effettuare l'ingestion dei dati, tramite il seguente comando:
 
 ```bash
 docker compose run --rm app python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f --version v03 --model "PRINT! F"
 ```
 
+Al termine del processo è possibile avviare il server web tramite il seguente comando:
+
 ```bash
 docker compose up
 ```
 
-L'app risponde su http://localhost:8501. La cartella `data/` e' montata
-dall'host: un indice gia' costruito fuori da Docker viene riusato cosi' com'e',
-e l'audit log resta sull'host. I modelli finiscono nel volume `hf-cache`
-(2,6 GB) e si scaricano solo al primo avvio.
+## Eval
 
-Nel container embedding e reranker girano su CPU: Docker su macOS non ha
-accesso alla GPU del Mac (MPS), che l'ambiente locale invece usa. Misurato su un
-Mac con Apple Silicon, sulle 24 domande rispondibili dell'eval set, il
-retrieval passa da circa 150 ms a 0,6–1,1 s di mediana, a seconda del carico
-della macchina (tre misure), con un picco di 2,4 s oltre il budget di 2 s in
-una delle tre. Sulla risposta completa, che dipende soprattutto dalla chiamata
-al modello, il ritardo pesa meno. L'ingestion del manuale richiede circa 2
-minuti. I risultati non cambiano: stessi 5 frammenti, nello stesso ordine, su
-tutte le 24 domande. Per una dimostrazione su Mac conviene quindi l'ambiente
-locale.
+Le prestazioni del sistema si misurano con lo script di valutazione end-to-end,
+che interroga il sistema completo su 40 domande etichettate in
+[eval/eval_set.jsonl](eval/eval_set.jsonl):
+
+```bash
+python scripts/eval.py
+```
+
+Risultati di riferimento sul codice attuale:
+
+| metrica | valore |
+|---|---|
+| hit@5 (pagina giusta fra i 5 frammenti passati all'LLM) | 24/24 |
+| decisioni corrette (risposta, fallback, rifiuto) | 39/40 |
+| figure attese allegate | 12/12 |
+| retrieval, media a regime | 477 ms |
+| risposta completa, media a regime | 4832 ms |
+
+Metriche per classe, tempi per fase e per tipo di risposta, robustezza ai refusi
+e condizioni della misura sono in [docs/valutazione-prestazioni.md](docs/valutazione-prestazioni.md).
 
 ## Approfondimenti
 
-- [Normalizzazione della query](docs/normalizzazione-query.md) — come la domanda
-  viene ripulita prima del retrieval: estrazione dei metadati, correzione dei
-  refusi, espansione sinonimica, e perche' la correzione fuzzy ha bisogno di una
-  guardia sulle parole funzionali.
-- [La soglia del gate di dominio](docs/soglia-gate-dominio.md) — perche' il gate
-  esiste, perche' i suoi due errori non costano uguale, e come si ricava il
-  numero in `OFF_TOPIC_SIMILARITY_THRESHOLD`.
-- [Fusione RRF e reranker](docs/rrf-e-reranker.md) — i quattro punteggi della
-  pipeline, perche' serve un secondo stadio, cosa significa il punteggio del
-  reranker e perche' il gruppo di candidati resta a 5.
+- [Normalizzazione della query](docs/normalizzazione-query.md) — questo documento spiega come la domanda dell'utente viene ripulita prima del retrieval: estrazione dei metadati, correzione dei refusi sulle parole del manuale indicizzato, riconoscimento dei termini per l'espansione sinonimica, e le misure con cui i due stadi sono stati tarati.
+- [La soglia del gate di dominio](docs/soglia-gate-dominio.md) — questo documento spiega che cosa si intende con gate di dominio e come si ricava il numero in `OFF_TOPIC_SIMILARITY_THRESHOLD`.
+- [Fusione RRF e reranker](docs/rrf-e-reranker.md) — questo documento argomenta la logica dietro il sistema di reranking e perche' il gruppo di candidati resta a 5 (come indicato nel file di configurazione).
 
 ## Strumenti di analisi
 
-`scripts/` contiene strumenti di indagine, non codice di produzione: non
-partecipano al funzionamento del sistema, ma le loro dipendenze sono incluse in
-`requirements.txt` insieme a tutto il resto, cosi' l'ambiente e il punto di
-installazione restano uno solo.
+La cartella `scripts` contiene strumenti di indagine, non codice di produzione: non partecipano al funzionamento del sistema, ma le loro dipendenze sono incluse in `requirements.txt`.
 
-```bash
-python scripts/compare_chunking.py --pages 30 31
-```
-
-[calibrate_threshold.py](scripts/calibrate_threshold.py) ricalcola la soglia del
-gate di dominio (`OFF_TOPIC_SIMILARITY_THRESHOLD`) sui punteggi reali
-dell'indice. Va rilanciato dopo ogni re-ingestione, per accorgersi se i punteggi
-si sono spostati; il criterio dietro la formula e' in
-[docs/soglia-gate-dominio.md](docs/soglia-gate-dominio.md).
+[calibrate_threshold.py](scripts/calibrate_threshold.py) calcola la soglia delgate di dominio (`OFF_TOPIC_SIMILARITY_THRESHOLD`). Va rilanciato dopo ogni re-ingestione, per accorgersi se i punteggi
+si sono spostati; il criterio dietro la formula è spiegato dettagliatamente in [docs/soglia-gate-dominio.md](docs/soglia-gate-dominio.md).
 
 [calibrate_fuzzy.py](scripts/calibrate_fuzzy.py) misura, al variare di
-`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di
-dominio giusto e quanto testo corretto del manuale viene riscritto, con e senza
-la guardia sulle parole funzionali. Risultati e motivazione della soglia sono in
+`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di dominio giusto e quanto testo corretto del manuale viene riscritto I risultati e le motivazioni dietro la scelta dellasoglia sono spiegate in
 [docs/normalizzazione-query.md](docs/normalizzazione-query.md).
 
-[compare_chunking.py](scripts/compare_chunking.py) mette a confronto, sulle
-stesse pagine e con lo stesso modello di embedding, il chunking strutturato
-adottato dal progetto e il `SemanticChunker` di LangChain, riportando per
-entrambi numero di chunk, lunghezze e quota di blocchi con un titolo di
-sezione riconosciuto.
+[compare_chunking.py](scripts/compare_chunking.py) mette a confronto, sulle stesse pagine e con lo stesso modello di embedding, il chunking strutturato adottato dal progetto e il `SemanticChunker` di LangChain, riportando per entrambi numero di chunk, lunghezze e quota di blocchi con un titolo di sezione riconosciuto.
