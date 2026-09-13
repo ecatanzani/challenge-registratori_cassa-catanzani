@@ -1,21 +1,6 @@
 """
 Proposte di FAQ correlate per i percorsi di fallback, ricavate DALL'INDICE
 invece che scritte a mano.
-
-Perche' non una lista fissa nel codice: il brief chiede FAQ "correlate", e
-una costante hardcoded non e' correlata a niente — e' correlata al manuale
-che avevo sotto mano il giorno in cui l'ho scritta. Indicizza un manuale di
-un altro produttore e quelle tre domande diventano suggerimenti sbagliati,
-proposti con la stessa sicurezza di prima. Le sezioni vere del manuale sono
-gia' nell'indice: sono la fonte giusta.
-
-Due modi di chiamarlo, per i due fallback diversi:
-- `faqs_from_chunks(...)` — la domanda ha trovato qualcosa ma non abbastanza
-  per rispondere: si propongono le sezioni effettivamente recuperate, che
-  sono correlate alla domanda nel senso stretto del termine;
-- `faqs_from_index(...)` — la domanda e' fuori dominio e non c'e' nulla di
-  recuperato: si propongono le sezioni piu' sostanziose del manuale, come
-  risposta implicita alla domanda "e allora cosa posso chiederti?".
 """
 from __future__ import annotations
 

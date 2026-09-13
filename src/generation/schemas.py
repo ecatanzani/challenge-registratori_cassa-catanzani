@@ -137,7 +137,7 @@ class FinalAnswer(BaseModel):
     retrieval_ms: int = Field(
         default=0,
         description="Tempo di solo retrieval (normalizzazione + ricerca ibrida + rerank), in ms. "
-                    "E' la metrica confrontata con il budget 'TTFT retrieval < 2s' del brief.",
+                    "E' la metrica confrontata con il budget 'TTFT retrieval < 2s'.",
     )
     latency_ms: int = 0
 

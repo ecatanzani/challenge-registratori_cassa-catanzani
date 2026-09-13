@@ -77,7 +77,7 @@ def main() -> None:
     if e2e:
         e2e.sort()
         logger.info(f"\nLatenza E2E: mediana {e2e[len(e2e) // 2]} ms, max {e2e[-1]} ms "
-              f"(budget brief: <8000 ms)")
+              f"(budget: <8000 ms)")
     if ttft:
         ttft.sort()
         logger.info(f"Primo token: mediana {ttft[len(ttft) // 2]} ms (misurato dalla domanda)")

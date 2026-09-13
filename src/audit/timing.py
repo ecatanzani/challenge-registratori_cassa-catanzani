@@ -1,6 +1,6 @@
 """
 Misurazione dei tempi per singola fase, per verificare i budget di
-performance del brief: <2s dalla domanda al primo token prodotto dall'LLM,
+performance: <2s dalla domanda al primo token prodotto dall'LLM,
 <8s per la risposta completa, su laptop moderno.
 """
 from __future__ import annotations
