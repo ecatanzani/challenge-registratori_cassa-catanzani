@@ -28,11 +28,6 @@ from src.llm.client import get_embedding_model
 # Metrica di distanza esplicita per la collection Chroma: coseno, cosi' il
 COLLECTION_METADATA = {"hnsw:space": "cosine"}
 
-# Telemetria Chroma disattivata: l'ingestion gira su manuali di clienti, non
-# spedisce eventi d'uso a servizi terzi. Effetto collaterale utile: silenzia i
-# "Failed to send telemetry event ..." dovuti all'incompatibilita' di firma tra
-# chromadb e le versioni recenti di posthog. Deve essere identica su tutti i
-# client dello stesso processo, altrimenti Chroma rifiuta la seconda istanza.
 CHROMA_CLIENT_SETTINGS = ChromaSettings(anonymized_telemetry=False, is_persistent=True)
 
 

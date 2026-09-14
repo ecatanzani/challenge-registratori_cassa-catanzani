@@ -2,7 +2,6 @@
 Proposte di FAQ correlate per i percorsi di fallback, ricavate DALL'INDICE
 invece che scritte a mano.
 """
-from __future__ import annotations
 
 import json
 import re
@@ -10,7 +9,7 @@ from functools import lru_cache
 
 from config import settings
 
-# "3.12 PROGRAMMAZIONE INTESTAZIONE SCONTRINO" -> "PROGRAMMAZIONE INTESTAZIONE SCONTRINO"
+# "3.12 TITOLO" -> "TITOLO"
 _LEADING_NUMBER = re.compile(r"^\s*(?:\d{1,2}(?:\.\d{1,2}){0,2}[.)]?|CAPITOLO\s+\d+|SEZIONE\s+\d+)\s*[-–:]?\s*", re.IGNORECASE)
 # Titoli che non descrivono una procedura e non hanno senso come FAQ.
 _NON_PROCEDURAL = re.compile(

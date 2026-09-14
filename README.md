@@ -183,7 +183,6 @@ La cartella `scripts` contiene strumenti di indagine, non codice di produzione: 
 si sono spostati; il criterio dietro la formula è spiegato dettagliatamente in [docs/soglia-gate-dominio.md](docs/soglia-gate-dominio.md).
 
 [calibrate_fuzzy.py](scripts/calibrate_fuzzy.py) misura, al variare di
-`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di dominio giusto e quanto testo corretto del manuale viene riscritto I risultati e le motivazioni dietro la scelta della soglia sono spiegate in
-[docs/normalizzazione-query.md](docs/normalizzazione-query.md).
+`FUZZY_THRESHOLD`, quanti refusi sintetici vengono ricondotti al termine di dominio giusto e quanto testo corretto del manuale viene riscritto.
 
 [compare_chunking.py](scripts/compare_chunking.py) mette a confronto, sulle stesse pagine e con lo stesso modello di embedding, il chunking strutturato adottato dal progetto e il `SemanticChunker` di LangChain, riportando per entrambi numero di chunk, lunghezze e quota di blocchi con un titolo di sezione riconosciuto.

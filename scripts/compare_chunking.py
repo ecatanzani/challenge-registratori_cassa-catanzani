@@ -2,15 +2,7 @@
 Confronta il chunking strutturato del progetto (regex sulle intestazioni) con
 SemanticChunker di LangChain, sulle stesse pagine e con lo stesso modello di
 embedding.
-
-    python scripts/compare_chunking.py --pages 30 31
-    python scripts/compare_chunking.py --pages 70 --percentile 90
-
-Strumento di analisi, non codice di produzione. Richiede
-langchain-experimental, elencato in requirements.txt con il resto: l'ambiente
-del progetto e' unico e si installa in un colpo solo.
 """
-from __future__ import annotations
 
 import argparse
 import re

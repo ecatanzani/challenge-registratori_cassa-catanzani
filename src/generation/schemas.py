@@ -1,13 +1,11 @@
 """
-Schema strutturato della risposta. Il punto chiave anti-allucinazione: ogni
-StepItem porta un `chunk_id` obbligatorio che DEVE corrispondere a uno dei
-chunk realmente recuperati (validato in chain.py, non solo richiesto via
-prompt). Se il modello non riesce ad ancorare uno step a un chunk esistente,
+Schema strutturato della risposta.
+Sistema anti-allucinazione: ogni StepItem porta un `chunk_id` obbligatorio
+che DEVE corrispondere a uno dei chunk realmente recuperati.
+Se il modello non riesce ad ancorare uno step a un chunk esistente,
 quello step viene scartato in post-processing e, se non resta nulla di
 valido, scatta il fallback.
 """
-from __future__ import annotations
-
 import dataclasses
 
 from pydantic import BaseModel, Field, field_serializer

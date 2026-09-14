@@ -11,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from config import settings
 from src.audit.logger import log_query
-from src.audit.timing import current_request_id, log_elapsed, new_request_id, timed
+from src.audit.timing import log_elapsed, new_request_id, timed
 from src.generation.faq import faqs_from_chunks, faqs_from_index
 from src.generation.prompts import SYSTEM_PROMPT, USER_TEMPLATE, format_context
 from src.generation.schemas import (
@@ -115,30 +115,8 @@ def _build_citations_and_images(
     citations: list[Citation] = []
     images = []
     seen_image_ids: set[str] = set()
-    # (doc_id, pagina DELLA FIGURA) -> anteprima di quella pagina. Indicizzata
-    # sulla pagina della figura e non su quella del chunk: un chunk puo'
-    # toccarne piu' d'una, e la citazione deve linkare l'anteprima della
-    # propria.
     preview_by_page: dict[tuple[str, int], str | None] = {}
-    # Evita di ricalcolare i ritagli per due chunk della stessa sezione, che
-    # hanno la stessa identica lista di figure.
     gruppi_elaborati: set[tuple[str, frozenset[str]]] = set()
-
-    # I chunk realmente USATI dalla risposta, nell'ordine dei passi.
-    #
-    # Anche le avvertenze contano. Non e' un dettaglio: la regola 4 del
-    # SYSTEM_PROMPT dice al modello di mettere in `warnings` i vincoli di
-    # ruolo e di conformita', quindi un frammento puo' contribuire alla
-    # risposta SOLO da li'. Misurato su "come stampo un logo grafico?": il
-    # cap.8 finiva sistematicamente in un'avvertenza ("per un logo
-    # personalizzato contatta il centro assistenza"), e questa funzione lo
-    # ignorava — perdendo la sua citazione e le due figure di quella pagina,
-    # le uniche pertinenti alla domanda.
-    #
-    # I passi vengono prima perche' danno l'ordine di lettura; le avvertenze
-    # aggiungono solo i chunk che i passi non hanno gia' coperto. I chunk_id
-    # sono gia' stati validati da _validate_grounding, sui warning come sugli
-    # step, quindi qui non entra niente di inventato.
     cited_ids: list[str] = []
     for chunk_id in (
         [s.chunk_id for s in structured.steps]
@@ -182,9 +160,6 @@ def _build_citations_and_images(
                 snippet=c.document.page_content[:220],
                 version=meta.get("version"),
                 ocr_used=bool(meta.get("ocr_used")),
-                # L'anteprima della pagina del CHUNK: la citazione riguarda un
-                # passo di testo, che sta su una pagina sola. None se su quella
-                # pagina non ci sono figure da evidenziare.
                 page_preview_path=preview_by_page.get((doc_id, page)),
             )
         )

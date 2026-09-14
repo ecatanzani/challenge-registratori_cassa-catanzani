@@ -10,7 +10,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from config import settings
 from src.retrieval.hybrid_retriever import compute_relevance_score
 from src.logging.logger import setup_main_logger
 
@@ -18,9 +17,6 @@ EVAL_PATH = Path(__file__).resolve().parents[1] / "eval" / "eval_set.jsonl"
 
 
 def calcola_scarti(punteggi: list[float], prove: int = 2000, seed: int = 0) -> list[float]:
-    """Di quanto cadono, sotto il minimo di un sottoinsieme di calibrazione, le
-    domande legittime tenute fuori. Meta' dentro e meta' fuori a ogni prova: e'
-    il rapporto che stressa di piu' la stima con pochi dati."""
     random.seed(seed)
     n = len(punteggi)
     domande_di_calibrazione = max(2, n // 2)

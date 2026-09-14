@@ -51,7 +51,7 @@ def _dense_search_with_scores(query_text: str, k: int) -> list[tuple[Document, f
 def compute_relevance_score(raw_query: str) -> float:
     """Punteggio di rilevanza (similarita' coseno col chunk piu' vicino
     nell'indice).
-    Questa funzione serve per la claibrazione della threhsold di dominio
+    Questa funzione serve per la calibrazione della threhsold di dominio
     """
     normalized = normalize_query(raw_query)
     results = _dense_search_with_scores(normalized.corrected, k=1)

@@ -136,12 +136,6 @@ def _promuove_parola_funzionale(window: str, match: str) -> bool:
     """True se la correzione sostituirebbe una parola funzionale con un'altra
     parola: `lo scontrino` -> `logo scontrino`, `programmazione di` ->
     `programmazione iva`, `allo scontrino` -> `annullo scontrino`.
-
-    Il confronto e' posizionale e non "la finestra contiene una parola
-    funzionale": 14 termini del vocabolario ne contengono una (`nota di
-    credito`, `data e ora`, `chiusura di cassa`, `cancellare lo scontrino`...)
-    e devono restare correggibili. In quei casi la parola funzionale resta
-    identica e cambia solo la parola piena, quindi la guardia non scatta.
     """
     wt, mt = window.split(), match.split()
     if len(wt) != len(mt):
@@ -154,9 +148,7 @@ def _best_vocab_match(window: str) -> str | None:
     supera la soglia. Confronta solo contro termini con lo STESSO numero di
     parole della finestra (vedi nota FUZZY_*).
 
-    Le finestre di una parola sola non vengono nemmeno confrontate: la
-    guardia sta qui e non solo nel ciclo chiamante, cosi' vale per qualunque
-    percorso arrivi a questa funzione.
+    Le finestre di una parola sola non vengono nemmeno confrontate.
     """
     word_count = len(window.split())
     if word_count < MIN_WINDOW_WORDS:
