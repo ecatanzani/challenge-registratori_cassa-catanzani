@@ -9,9 +9,7 @@ risposta, misurati sul codice attuale con `scripts/eval.py`.
 python scripts/eval.py
 ```
 
-Lo script interroga il sistema completo, LLM compreso, su tutte le domande
-dell'eval set e confronta le risposte con le etichette. Ogni domanda passa da
-`answer_query()` e lascia una riga nell'audit log. Il file di audit viene creato alla prima esecuzione del codice (se non esiste) e poi aggiornato incrementalmente. Questo file riporta al suo interno tutte le informazioni in merito alle prestazioni del sistema, comprensivo della query dell'utente.
+Lo script interroga il sistema completo, LLM compreso, su tutte le domande dell'eval set e confronta le risposte con le etichette. Ogni domanda passa da `answer_query()` e lascia una riga nell'audit log. Il file di audit viene creato alla prima esecuzione del codice (se non esiste) e poi aggiornato incrementalmente. Questo file riporta al suo interno tutte le informazioni in merito alle prestazioni del sistema, comprensivo della query dell'utente.
 
 Le medie e i percentili dei tempi riportati qui sotto sono calcolati proprio da quell'audit log, che per ogni domanda registra tempo di retrieval, tempo al primo token e tempo totale.
 
