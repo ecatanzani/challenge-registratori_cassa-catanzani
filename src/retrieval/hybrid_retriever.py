@@ -215,13 +215,15 @@ def retrieve(normalized_query: NormalizedQuery) -> RetrievalResult:
     with timed("retrieval.bm25"):
         bm25_docs_ranked = _bm25_ranked_docs(normalized_query.expanded)
 
-    # Filtro per modello/firmware se specificato dall'utente
+    # Filtro per modello, se la domanda ne nomina uno indicizzato
+    filtro_modello = False
     if normalized_query.model:
         model_lower = normalized_query.model.lower()
         dense_filtered = [d for d in dense_docs if str(d.metadata.get("model", "")).lower() == model_lower]
         bm25_filtered = [d for d in bm25_docs_ranked if str(d.metadata.get("model", "")).lower() == model_lower]
-        dense_docs = dense_filtered or dense_docs
-        bm25_docs_ranked = bm25_filtered or bm25_docs_ranked
+        if dense_filtered or bm25_filtered:
+            dense_docs, bm25_docs_ranked = dense_filtered, bm25_filtered
+            filtro_modello = True
 
     with timed("retrieval.fusion_rrf"):
         fused_scores = _reciprocal_rank_fusion(
@@ -240,7 +242,7 @@ def retrieve(normalized_query: NormalizedQuery) -> RetrievalResult:
 
         scored.sort(key=lambda c: c.score, reverse=True)
         top = scored[: settings.top_k_final]
-        ambiguous, candidate_models = _detect_ambiguity(top, bool(normalized_query.model))
+        ambiguous, candidate_models = _detect_ambiguity(top, filtro_modello)
 
     return RetrievalResult(
         chunks=top,

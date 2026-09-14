@@ -3,6 +3,7 @@ Codice per il chunking delle pagine secondo la struttura a sezioni
 """
 
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -25,6 +26,7 @@ CHUNK_SIZE = 900            # tetto di caratteri per chunk
 CHUNK_OVERLAP = 150         # sovrapposizione quando un pezzo va spezzato
 TOC_LINE_RATIO = 0.35       # oltre 1/3 di righe puntinate = sommario
 MIN_CHUNK_CHARS = 30        # sotto, il chunk non può rispondere a niente
+TOLLERANZA_TITOLO = 3.0     # espresso in punti: una riga piu' in alto del valore attuale è considerata sopra il titolo
 
 @dataclass
 class Chunk:
@@ -95,6 +97,27 @@ def _titoli_con_y(page_content) -> list[tuple[float, str]]:
     return sorted(trovati, key=lambda t: t[0])
 
 
+def _testo_in_ordine_di_pagina(page_content) -> str:
+    """Testo della pagina con in testa le righe stampate sopra il primo titolo.
+
+    Il PDF puo' salvare il testo in un ordine diverso da quello di stampa:
+    ripristinare l'ordine corretto migliora le prestazioni di retrieval.
+    """
+    titoli = _titoli_con_y(page_content)
+    if not titoli:
+        return page_content.text
+    y_primo_titolo = titoli[0][0]
+    sopra = Counter(testo for y, testo in page_content.text_lines if y < y_primo_titolo - TOLLERANZA_TITOLO)
+    in_testa, resto = [], []
+    for riga in page_content.text.split("\n"):
+        if sopra[riga.strip()] > 0:
+            sopra[riga.strip()] -= 1
+            in_testa.append(riga)
+        else:
+            resto.append(riga)
+    return "\n".join(in_testa + resto)
+
+
 def _figure_per_sezione(parsed: ParsedDocument) -> dict[str, list[str]]:
     """titolo di sezione -> image_id delle figure che le appartengono.
     """
@@ -130,13 +153,12 @@ def chunk_document(
     chunks: list[Chunk] = []
     counter = 0
     # Ultimo titolo di sezione incontrato, che sopravvive al cambio pagina.
-    # Permette di citare come "p.15 - Inizializzazione DGFE" senza perdere il titolo
     last_title: str | None = None
 
     figure_per_sezione = _figure_per_sezione(parsed)
 
     for page_content in parsed.pages:
-        segments = _split_page_by_headers(page_content.text)
+        segments = _split_page_by_headers(_testo_in_ordine_di_pagina(page_content))
         for seg_index, (title, body) in enumerate(segments):
             if _looks_like_table_of_contents(body):
                 continue

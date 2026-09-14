@@ -90,11 +90,16 @@ for _term in DOMAIN_VOCAB:
     _VOCAB_BY_WORD_COUNT.setdefault(len(_term.split()), []).append(_term)
 
 # Regex per estrazione di informazioni e token
-MODEL_PATTERN = re.compile(r"\b(?:modello|mod\.?)\s*[:\-]?\s*([A-Za-z0-9\-]+)", re.IGNORECASE)
 FIRMWARE_PATTERN = re.compile(
     r"\b(?:firmware|fw|versione)\s*[:\-]?\s*(v?[0-9]+(?:\.[0-9]+){0,2})", re.IGNORECASE
 )
-ERROR_CODE_PATTERN = re.compile(r"\b([A-Z])\s?-?\s?(\d{1,3})\b", re.IGNORECASE)
+# Codici errore: 
+# - lettera e cifre attaccate ("E60", "E-60");
+# - con uno spazio ("e 60") solo dopo "errore" o "codice" (altrimenti "20 e 20" diventerebbe E20)
+ERROR_CODE_PATTERN = re.compile(r"\b([A-Z])-?(\d{2,3})\b", re.IGNORECASE)
+ERROR_CODE_IN_CONTESTO = re.compile(
+    r"\b(?:errore|codice)(?:\s+errore)?\s*:?\s*([A-Z])?\s?-?\s?(\d{2,3})\b", re.IGNORECASE
+)
 _TOKEN_PATTERN = re.compile(r"[0-9a-zà-ÿ]+", re.IGNORECASE)
 
 # Parametri fuzzy
@@ -204,6 +209,63 @@ def _italiano() -> dict[str, float]:
             if (zipf := zipf_frequency(parola, "it")) >= SOGLIA_ZIPF}
 
 
+@lru_cache(maxsize=1)
+def _modelli_indicizzati() -> dict[str, str]:
+    """Modelli presenti nell'indice, per forma compatta: `printf` -> `PRINT! F`."""
+    modelli: dict[str, str] = {}
+    corpus = settings.vectorstore_dir / "bm25_corpus.jsonl"
+    if not corpus.exists():
+        return modelli
+    with open(corpus, "r", encoding="utf-8") as f:
+        for riga in f:
+            modello = json.loads(riga)["metadata"].get("model")
+            if modello:
+                modelli.setdefault("".join(_TOKEN_PATTERN.findall(modello.lower())), modello)
+    return modelli
+
+
+def _modello_citato(tokens: list[str]) -> str | None:
+    """Modello indicizzato nominato nella domanda, scritto come nei metadati.
+
+    Il confronto ignora maiuscole, spazi e punteggiatura: «PRINT! F», «print f»
+    e «printf» indicano tutti `PRINT! F`. Un modello che l'indice non contiene
+    non viene riconosciuto, quindi non esclude la richiesta di chiarimento.
+    """
+    modelli = _modelli_indicizzati()
+    lunghezza_massima = max(map(len, modelli), default=0)
+    for inizio in range(len(tokens)):
+        compatto = ""
+        for token in tokens[inizio:]:
+            compatto += token
+            if len(compatto) > lunghezza_massima:
+                break
+            if compatto in modelli:
+                return modelli[compatto]
+    return None
+
+
+@lru_cache(maxsize=1)
+def _codici_indicizzati() -> set[str]:
+    """Codici errore presenti nei manuali indicizzati: `E01`, `E60`, ..."""
+    corpus = settings.vectorstore_dir / "bm25_corpus.jsonl"
+    if not corpus.exists():
+        return set()
+    with open(corpus, "r", encoding="utf-8") as f:
+        return {f"{m.group(1)}{m.group(2)}".upper()
+                for riga in f for m in ERROR_CODE_PATTERN.finditer(json.loads(riga)["text"])}
+
+
+def _codici_errore(raw_query: str) -> list[str]:
+    """Estrazione dei codici errore citati nella domanda e presenti nei manuali indicizzati.
+    """
+    indicizzati = _codici_indicizzati()
+    trovati = {f"{m.group(1)}{m.group(2)}".upper() for m in ERROR_CODE_PATTERN.finditer(raw_query)}
+    for m in ERROR_CODE_IN_CONTESTO.finditer(raw_query):
+        lettere = [m.group(1).upper()] if m.group(1) else sorted({codice[0] for codice in indicizzati})
+        trovati.update(f"{lettera}{m.group(2)}" for lettera in lettere)
+    return sorted((trovati & indicizzati) if indicizzati else trovati)
+
+
 def _correggi_parola(token: str) -> str:
     """Parola con cui sostituire un refuso, o il token invariato.
 
@@ -306,16 +368,14 @@ def _expand_with_synonyms(terms: list[str]) -> list[str]:
 
 
 def normalize_query(raw_query: str) -> NormalizedQuery:
-    # Estraggo informazioni di modello/firmware/errori
-    model_match = MODEL_PATTERN.search(raw_query)
+    # Estraggo informazioni di firmware/errori
     fw_match = FIRMWARE_PATTERN.search(raw_query)
-    error_codes = sorted(
-        {f"{m.group(1).upper()}{m.group(2)}" for m in ERROR_CODE_PATTERN.finditer(raw_query)}
-    )
+    error_codes = _codici_errore(raw_query)
 
     query_lower = raw_query.lower()
     tokens = _TOKEN_PATTERN.findall(query_lower) # Non uso split per non avere token sporchi
     protected = _protected_spans(raw_query, tokens)
+    modello = _modello_citato(tokens)
 
     # Correggo la query
     corrected_tokens, corrections = _correct_tokens(tokens, protected)
@@ -337,7 +397,7 @@ def normalize_query(raw_query: str) -> NormalizedQuery:
         original=raw_query,
         corrected=corrected,
         expanded=expanded,
-        model=model_match.group(1) if model_match else None,
+        model=modello,
         firmware=fw_match.group(1) if fw_match else None,
         matched_terms=matched,
         error_codes=error_codes,
