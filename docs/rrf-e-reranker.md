@@ -9,7 +9,7 @@ domanda
    │
    ├──► retriever denso  ──► 8 candidati per similarità coseno     ① score in [-1, 1]
    │
-   ├──► BM25             ──► 8 candidati per punteggio lessicale   ② ecore illimitato
+   ├──► BM25             ──► 8 candidati per punteggio lessicale   ② score illimitato
    │
    ▼
 fusione RRF  ──► combina per POSIZIONE, tiene i primi 5            ③ score ~0,01
@@ -32,7 +32,7 @@ LLM riceve i 5 chunk
 
 ## Perché RRF: due scale incompatibili
 
-Il coseno vive tra −1 ed 1. Lo score ottenuto da BM25, invece, non ha limite superiore e dipende da quante parole ha la domanda e da quanto sono rare nel corpus: la stessa domanda sul rotolo di carta vale 57 detta in una parola e 72 detta in una frase. Sommare gli score del retriever denso e semantico non ha senso, mentre normalizzarli introduce ipotesi che nessuno dei due soddisfa.
+Il coseno vive tra −1 ed 1. Lo score ottenuto da BM25, invece, non ha limite superiore e dipende da quante parole ha la domanda e da quanto sono rare nel corpus. Sommare gli score del retriever denso e lessicale non ha senso, mentre normalizzarli introduce ipotesi che nessuno dei due soddisfa.
 
 La soluzione è l'utilizzo del **Reciprocal Rank Fusion**, che aggira il problema ignorando i punteggi e usando solo le posizioni: ogni chunk riceve `peso / (60 + posizione)` da ciascuna classifica in cui compare, e i contributi si sommano. Un chunk che entrambi i retriever mettono in alto vince; uno che solo uno dei due vede, conta meno.
 
@@ -42,9 +42,9 @@ RRF **non legge il testo**, ma è un'aggregazione di opinioni già date: se entr
 
 Il retriever denso è un **bi-encoder**: domanda e chunk vengono trasformati in vettori *separatamente*, e poi confrontati con un prodotto scalare. I chunk si codificano una volta sola durante l'ingestion, quindi la ricerca è istantanea, ma i due testi non si vedono mai, e tutta la loro interazione si riduce a un numero finale.
 
-Il reranker è invece un **cross-encoder**: domanda e chunk vengono concatenati in un'unica sequenza de attraversano il transformer *insieme*. Ogni parola della domanda può fare `attenzione` su ogni parola del chunk, strato dopo strato: il modello legge la coppia come la leggerebbe una persona, chiedendosi se quel paragrafo risponde a quella domanda.
+Il reranker è invece un **cross-encoder**: domanda e chunk vengono concatenati in un'unica sequenza ed attraversano il transformer *insieme*. Ogni parola della domanda può fare `attenzione` su ogni parola del chunk, strato dopo strato: il modello legge la coppia come la leggerebbe una persona, chiedendosi se quel paragrafo risponde a quella domanda.
 
-Il reranker è molto più accurato, ma non si può precalcolare: serve un'esecuzione completa del modello per ogni coppia domanda-risposta. Su tutti i chunk sarebbe troppo lento; sui milgiori 5 costa invece circa 80 ms. Da qui i due stadi: il primo scarta rapidamente quasi tutto il manuale, il secondo giudica con cura ciò che resta.
+Il reranker è molto più accurato, ma non si può precalcolare: serve un'esecuzione completa del modello per ogni coppia domanda-risposta. Su tutti i chunk sarebbe troppo lento; sui migliori 5 costa invece circa 80 ms. Da qui i due stadi: il primo scarta rapidamente quasi tutto il manuale, il secondo giudica con cura ciò che resta.
 
 ## Cos'è il punteggio del reranker
 
@@ -69,7 +69,7 @@ Un limite, da dichiarare: `σ(z)` è la probabilità **stimata dal modello** sot
 
 ## Serve davvero il reranker, se RRF basta a scegliere i 5?
 
-Ho effetturato i test su 48 domande (le 24 rispondibili dell'eval set più 24 costruite da sezioni del manuale che l'eval set non copre):
+Ho effettuato i test su 48 domande (le 24 rispondibili dell'eval set più 24 costruite da sezioni del manuale che l'eval set non copre):
 
 | | hit@1 | hit@5 | MRR |
 |---|---|---|---|

@@ -25,9 +25,8 @@ Il sistema realizzato può essere sintetizzato con il seguente schema:
 #### Inferenza
 
 - Normalizzazione della query (correzione errori - ricerca termini simili)
-- Ricerca densa
-- Gate di dominio (per reiezione domande off-topic)
 - Ricerca semantica
+- Gate di dominio (per reiezione domande off-topic)
 - Fusione risultati retriever semantico e BM25 con tecnica RRF
 - Reranker
 - LLM per la generazione della risposta
@@ -82,14 +81,9 @@ python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f -
 | `--model` | modello di registratore di cassa a cui il manuale si riferisce |
 | `--firmware` | versione firmware documentata (opzionale: questo manuale non ne dichiara una) |
 
-`--model` e `--firmware` non sono decorativi: finiscono nei metadati di ogni
+`--model` e `--firmware` finiscono nei metadati di ogni
 chunk e servono a distinguere manuali di apparecchi diversi in fase di
 retrieval.
-
-`--doc-id` e `--version` del comando qui sopra non sono d'esempio: sono i valori
-che l'eval set in `eval/eval_set.jsonl` si aspetta di trovare nell'indice.
-Indicizzare con un `--doc-id` diverso non produce nessun errore visibile, ma fa
-riportare a `scripts/eval.py` uno hit@5 di 0/24 su un sistema che funziona.
 
 Alla **prima** esecuzione viene scaricato il modello di embedding
 (`intfloat/multilingual-e5-large`, circa 2 GB) nella cache di Hugging Face in
@@ -111,7 +105,7 @@ box delle immagini. Per ripartire da zero e' sufficiente cancellare quella
 cartella e rilanciare il comando.
 
 Il sistema risponde **a turno singolo**: ogni domanda viene interpretata da
-sola, senza storico della conversazione. La scelta e' deliberata — il prompt
+sola, senza storico della conversazione (tranne che per i casi in cui è richiesto un chiarimento). La scelta e' deliberata — il prompt
 resta corto e verificabile, e la risposta e' sempre riconducibile ai soli chunk
 citati. Il sistema è istruito a chiedere un chiarimento quando il contesto non basta.
 

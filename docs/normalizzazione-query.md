@@ -69,11 +69,9 @@ lingua, qui farebbe danni: misurato, trasforma `dgfe` in `due`, `registratore`
 in `registrato` e `strono` in `strano` invece che in `storno`.
 
 **L'italiano fa da freno e da riserva.** Il vocabolario viene da `wordfreq`, che
-per ogni parola dà anche quanto è comune nella lingua (scala zipf). Il freno è la
-garanzia di non riscrivere italiano corretto: senza, su una domanda fuori tema
-`carbonara` diventerebbe `carbonato`. Da riserva interviene in due casi:
+per ogni parola dà anche quanto è comune nella lingua. Una parola con typo viene sostituita:
 
-- quando offre una parola **strettamente più vicina** di quella del manuale:
+- quando il dizionario italiano offre una parola **strettamente più vicina** di quella del manuale:
   `impotso` diventa `imposto` (distanza 1) e non `importo` (distanza 2), che
   nella domanda vorrebbe dire un'altra cosa;
 - quando il manuale **non ha candidati**: `prenoatzione` diventa `prenotazione`.

@@ -10,7 +10,7 @@ Il valore è in `.env` (`OFF_TOPIC_SIMILARITY_THRESHOLD`) e si ricalcola con:
 python scripts/calibrate_threshold.py
 ```
 
-Il valore della soglia è ottenuta con la seguente equazione:
+Il valore della soglia è ottenuto con la seguente equazione:
 
 ```
 soglia = min( minimo delle domande con risposta nel manuale − margine,
@@ -20,7 +20,7 @@ soglia = min( minimo delle domande con risposta nel manuale − margine,
 Il margine non è fissato a mano: lo script lo ricava dai dati. Il procedimento e i
 valori di oggi sono nella sezione [Estrazione dei valori puntuali](#estrazione-dei-valori-puntuali).
 
-Il gate di dominio deve essre visto come **un'ottimizzazione di costo**: evita una chiamata LLM sulle domande palesemente estranee. 
+Il gate di dominio deve essere visto come **un'ottimizzazione di costo**: evita una chiamata LLM sulle domande palesemente estranee. 
 
 Gli errori che questo gate può causare non sono simmetrici:
 
@@ -29,14 +29,13 @@ Gli errori che questo gate può causare non sono simmetrici:
 | **blocca una domanda legittima** | l'operatore, con la cassa ferma, si sente rispondere *"questa domanda non riguarda i manuali"* | aiuto negato: il fallimento peggiore del sistema |
 | **lascia passare una domanda estranea** | una chiamata LLM in più, che finisce comunque in un rifiuto corretto grazie al grounding | qualche centesimo; la risposta all'utente resta giusta |
 
-Questo gate non serve at attribuire la correttezza delle
-risposte, che è invece il compito della funzione di **grounding** (`_validate_grounding()` in `chain.py`, che scarta ogni passo che citi un `chunk_id` non realmente recuperato).
+Questo gate non serve a garantire la correttezza delle risposte, che è invece il compito della funzione di **grounding** (`_validate_grounding()` in `chain.py`, che scarta ogni passo che citi un `chunk_id` non realmente recuperato).
 
 ## Le tre classi, e cosa il gate deve farne
 
 L'eval set etichetta ogni domanda con un `kind`, e i tre valori hanno ruoli diversi nel calcolo.
 
-**`rispondibile` — vincolo forte.** La risposta esiste nel manuale; bloccarle una nega assistenza.
+**`rispondibile` — vincolo forte.** La risposta esiste nel manuale; bloccarne una nega assistenza.
 
 **`vicina_non_documentata` — vincolo debole.** Argomento plausibile in un punto vendita ma assente da questo manuale: POS, lotteria scontrini, inventario. Bloccarle non sarebbe un risparmio neutro ma un **degrado**: il gate darebbe un
 rifiuto generico con FAQ scollegate, mentre lasciandole passare l'LLM produce un rifiuto specifico con FAQ ricavate dai chunk davvero recuperati.
@@ -92,4 +91,4 @@ soglia = min(0.8372 − 0.0354 , 0.8172 − 0) = 0.8018   <- decide le domande c
 Chiude con due controlli sulle stesse domande: legittime bloccate 0 su 34, fuori
 tema fermate 5 su 6.
 
-**Il valore in uso.** In `.env` la soglia è 0.8, un'aprossimazione del valore calcolato dal codice di calibrazione appena descritto.
+**Il valore in uso.** In `.env` la soglia è 0.8, un'approssimazione del valore calcolato dal codice di calibrazione appena descritto.

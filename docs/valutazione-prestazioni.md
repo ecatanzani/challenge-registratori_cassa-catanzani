@@ -11,7 +11,7 @@ python scripts/eval.py
 
 Lo script interroga il sistema completo, LLM compreso, su tutte le domande
 dell'eval set e confronta le risposte con le etichette. Ogni domanda passa da
-`answer_query()` e lascia una riga nell'audit log. Il file di audit viene creato alla prima esecuzione del codice (se non esiste) e poi aggiornato incrementalmente. Questo file riporta al suo interno tutte le informaizoni in merito alle prestaizoni del sistema, comprensivo della query dell'utente.
+`answer_query()` e lascia una riga nell'audit log. Il file di audit viene creato alla prima esecuzione del codice (se non esiste) e poi aggiornato incrementalmente. Questo file riporta al suo interno tutte le informazioni in merito alle prestazioni del sistema, comprensivo della query dell'utente.
 
 Le medie e i percentili dei tempi riportati qui sotto sono calcolati proprio da quell'audit log, che per ogni domanda registra tempo di retrieval, tempo al primo token e tempo totale.
 
@@ -65,13 +65,13 @@ Il sistema può decidere di comportarsi in uno dei seguenti modi:
 |---|---|
 | `rispondibile` | 24/24 |
 | `vicina_non_documentata` | 9/10 |
-| `fuori_tema` | 6/6 |
+| `fuori_tema` | 6/6 (5 fermate dal gate, 1 fallback dell'LLM) |
 | **complessivo** | **39/40 (98%)** |
 
 L'unico errore è *«Come aggiungo un nuovo operatore al gestionale di
 magazzino?»
 
-Errore noto: risposta sull'oggetto sbagliato. Su «Come aggiungo un nuovo operatore al gestionale di magazzino?» il sistema risponde con la procedura di programmazione degli operatori del registratore (p.21), invece di fare fallback. L'errore è sistematico, ovvero avvienbe in tutte le esecuzioni. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
+Errore noto: risposta sull'oggetto sbagliato. Su «Come aggiungo un nuovo operatore al gestionale di magazzino?» il sistema risponde con la procedura di programmazione degli operatori del registratore (p.21), invece di fare fallback. L'errore è sistematico, ovvero avviene in tutte le esecuzioni. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
 
 Una possibile soluzione potrebbe essere la seguente:
 
@@ -85,18 +85,6 @@ Aggiungere a `StructuredAnswer` un campo che obblighi il modello a pronunciarsi 
 
 Una figura conta se viene allegata da una delle pagine attese, fino al numero di
 figure che la domanda richiede.
-
-### Robustezza ai refusi
-
-Misurata a parte, perché l'eval set contiene quasi solo domande scritte bene.
-
-| prova | risultato |
-|---|---|
-| le 24 domande con risposta, con un refuso iniettato nella parola più lunga | hit@1 20, hit@5 24, MRR 0.910 |
-| 17 domande nuove scritte male, confrontate con la stessa domanda scritta bene | stesso primo frammento 17/17, frammenti in comune 83/85 |
-
-Il procedimento e il confronto con il correttore
-precedente sono spiegate nel dettaglio in [normalizzazione-query.md](normalizzazione-query.md).
 
 ## Tempi di risposta
 
