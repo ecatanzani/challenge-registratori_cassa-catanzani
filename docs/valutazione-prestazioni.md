@@ -66,7 +66,7 @@ Il sistema può decidere di comportarsi in uno dei seguenti modi:
 | `fuori_tema` | 6/6 (5 fermate dal gate, 1 fallback dell'LLM) |
 | **complessivo** | **40/40 (100%)** |
 
-Nei test eseguiti non sono presenti errori. La domanda meno stabile è «Come aggiungo un nuovo operatore al gestionale di magazzino?»: può ricevere la procedura di programmazione degli operatori del registratore (p.21) invece del fallback. In passato succedeva in tutte le esecuzioni; nelle 10 esecuzioni dell'eval del 14 settembre sul codice attuale è successo una volta, sempre con gli stessi frammenti recuperati, quindi a cambiare è la decisione dell'LLM. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
+Nei test eseguiti non sono presenti errori. La domanda meno stabile è «Come aggiungo un nuovo operatore al gestionale di magazzino?»: può ricevere la procedura di programmazione degli operatori del registratore (p.21) invece del fallback. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
 
 Una possibile soluzione potrebbe essere la seguente:
 

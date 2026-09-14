@@ -35,8 +35,7 @@ Attivazione (da ripetere a ogni nuova shell):
 source .venv/bin/activate
 ```
 
-A prompt attivato, `python` e `pip` puntano all'ambiente e non
-all'installazione di sistema. Verifica:
+A prompt attivato, `python` e `pip` puntano all'ambiente e non all'installazione di sistema. Verifica:
 
 ```bash
 which python
@@ -44,8 +43,7 @@ which python
 
 ## 3. Aggiornamento di pip
 
-`venv` installa una versione di pip che può essere più vecchia di quella
-necessaria a risolvere alcune wheel:
+`venv` installa una versione di pip che può essere più vecchia di quella necessaria a risolvere alcune wheel:
 
 ```bash
 python -m pip install --upgrade pip
@@ -63,38 +61,29 @@ A installazione completata, configurazione ed esecuzione sono descritte nel
 ## 5. Alternativa: esecuzione con Docker
 
 L'immagine contiene Python, le dipendenze e Tesseract con la lingua italiana.
-Il codice viene copiato dentro l'immagine; la cartella `data/` del repository
-(manuali, indice, audit log) resta invece sull'host ed è montata nel container.
+Il codice viene copiato dentro l'immagine; la cartella `data/` del repository (manuali, indice, audit log) resta invece sull'host ed è montata nel container.
 
 ### Prerequisiti
 
-**Docker con il plugin Compose**: Docker Desktop su macOS e Windows, Docker
-Engine con `docker-compose-plugin` su Linux.
+**Docker con il plugin Compose**: Docker Desktop su macOS e Windows, Docker Engine con `docker-compose-plugin` su Linux.
 
 ```bash
 docker compose version
 ```
 
-**Almeno 4 GB di memoria assegnata a Docker** (Docker Desktop → Settings →
-Resources). Misurato: picco di 2,6 GB, sia durante l'ingestion sia rispondendo
-alle domande.
+**Almeno 4 GB di memoria assegnata a Docker** (Docker Desktop → Settings → Resources). Misurato: picco di 2,6 GB, sia durante l'ingestion sia rispondendo alle domande.
 
-**Circa 6 GB di spazio su disco**: 3,1 GB per l'immagine, 2,6 GB per i
-modelli.
+**Circa 6 GB di spazio su disco**: 3,2 GB per l'immagine, 2,6 GB per i modelli.
 
 ### Configurazione
 
-Compose legge il file `.env` all'avvio di ogni container e senza si ferma con
-l'errore `env file .env not found`. Va creato anche solo per l'ingestion, che
-però non usa la chiave API:
+Compose legge il file `.env` all'avvio di ogni container e senza si ferma con l'errore `env file .env not found`. Va creato anche solo per l'ingestion, che però non usa la chiave API:
 
 ```bash
 cp .env.example .env
 ```
 
-I percorsi (`MANUALS_DIR`, `VECTORSTORE_DIR`, `CROPS_DIR`, `AUDIT_LOG_PATH`)
-vanno lasciati relativi come in `.env.example`: nel container `./data`
-corrisponde alla cartella `data/` del repository.
+I percorsi (`MANUALS_DIR`, `VECTORSTORE_DIR`, `CROPS_DIR`, `AUDIT_LOG_PATH`) devono essere lasciati relativi come in `.env.example`: nel container `./data` corrisponde alla cartella `data/` del repository.
 
 ### Costruzione dell'immagine
 
@@ -170,11 +159,8 @@ Loading weights: 100%|███████████████████�
 2026-09-11 20:30:10,865 - ingest - INFO - Completato: printf_f v03 (modello PRINT! F)
 ```
 
-`run --rm` avvia un container temporaneo che esegue il comando e poi viene
-eliminato. Al primo avvio scarica i modelli nel volume `hf-cache`.
-L'indice viene scritto in `data/vectorstore/` sull'host e resta disponibile dopo
-la chiusura del container. Un indice costruito fuori da Docker viene riusato
-così com'è: in quel caso questo passo si può saltare.
+`run --rm` avvia un container temporaneo che esegue il comando e poi viene eliminato. Al primo avvio scarica i modelli nel volume `hf-cache`.
+L'indice viene scritto in `data/vectorstore/` sull'host e resta disponibile dopo la chiusura del container. Un indice costruito fuori da Docker viene riusato così com'è: in quel caso questo passo si può saltare.
 
 ### Avvio dell'applicazione
 
@@ -182,18 +168,14 @@ così com'è: in quel caso questo passo si può saltare.
 docker compose up
 ```
 
-L'app è raggiungibile su http://localhost:8501. All'avvio la pagina mostra
-"Preparazione dei modelli...", il tempo di caricarli su CPU.
-Per fermarla: `Ctrl+C`, oppure da
-un'altra shell:
+L'app è raggiungibile su http://localhost:8501. All'avvio la pagina mostra "Preparazione dei modelli...", il tempo di caricarli su CPU.
+Per fermarla: `Ctrl+C`, oppure tramite un'altra shell:
 
 ```bash
 docker compose down
 ```
 
-Se la porta 8501 è già occupata, per esempio dall'app avviata fuori da Docker,
-Compose si ferma con `address already in use`. In quel caso si chiude l'altra
-app, oppure si cambia la porta dell'host in `compose.yaml` (`"8502:8501"`).
+Se la porta 8501 fosse già occupata, per esempio dall'app avviata fuori da Docker, Compose si ferma con `address already in use`. In quel caso si chiude l'altra app, oppure si cambia la porta dell'host in `compose.yaml` (`"8502:8501"`).
 
 Dopo una modifica al codice, ricostruzione e avvio si fanno insieme:
 
@@ -203,8 +185,7 @@ docker compose up --build
 
 ### Altri comandi
 
-Qualsiasi script del repository si esegue allo stesso modo, per esempio la
-valutazione end-to-end (richiede `ANTHROPIC_API_KEY`):
+Qualsiasi script del repository si esegue allo stesso modo, per esempio la valutazione end-to-end (richiede `ANTHROPIC_API_KEY`):
 
 ```bash
 docker compose run --rm app python scripts/eval.py
@@ -212,8 +193,7 @@ docker compose run --rm app python scripts/eval.py
 
 ### Pulizia
 
-Rimuove container, immagine e volume dei modelli. La cartella `data/` resta
-intatta sull'host:
+Rimuove container, immagine e volume dei modelli. La cartella `data/` resta intatta sull'host:
 
 ```bash
 docker compose down --rmi local --volumes

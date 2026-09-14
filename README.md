@@ -27,6 +27,7 @@ Il sistema realizzato può essere sintetizzato con il seguente schema:
 - Normalizzazione della query (correzione errori - ricerca termini simili)
 - Ricerca semantica
 - Gate di dominio (per reiezione domande off-topic)
+- Ricerca lessicale con BM25 sulla query espansa con i sinonimi
 - Fusione risultati retriever semantico e BM25 con tecnica RRF
 - Reranker
 - LLM per la generazione della risposta
@@ -55,19 +56,13 @@ Le impostazioni si leggono da un file `.env` nella radice del repository.
 cp .env.example .env
 ```
 
-Per l'ingestion **non serve nessuna chiave**: gli embedding sono calcolati in
-locale. `ANTHROPIC_API_KEY` diventa necessaria solo per la fase di risposta,
-che usa l'API Anthropic.
+Per l'ingestion **non serve nessuna chiave**: gli embedding sono calcolati in locale. `ANTHROPIC_API_KEY` diventa necessaria solo per la fase di risposta, che usa l'API Anthropic.
 
-Ogni campo della classe `Settings` in [config.py](config.py) e' sovrascrivibile
-dalla variabile d'ambiente omonima in maiuscolo — per esempio `EMBEDDING_MODEL`
-o `TOP_K_FINAL`.
+Ogni campo della classe `Settings` in [config.py](config.py) e' sovrascrivibile dalla variabile d'ambiente omonima in maiuscolo — per esempio `EMBEDDING_MODEL` o `TOP_K_FINAL`.
 
 ## Ingestion
 
-L'ingestion trasforma un manuale PDF nell'indice interrogabile: estrae testo e
-immagini pagina per pagina (con OCR di fallback sulle pagine scansionate), lo
-divide in chunk e ne persiste embedding, corpus lessicale e metadati.
+L'ingestion trasforma un manuale PDF nell'indice interrogabile: estrae testo ed immagini pagina per pagina (con OCR di fallback sulle pagine scansionate), lo divide in chunk e ne persiste embedding, corpus lessicale e metadati.
 
 ```bash
 python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f --version v03 --model "PRINT! F"
@@ -83,9 +78,9 @@ python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f -
 
 Alcuni commenti:
 
-`--version`, a parità di `doc-id`, sostituisce i chunk della precedente invece di duplicarli, mentre si aggiungono alla precedente nel caso di documento diverso (con le vecchie versioni che vengono penalizzate dal retriever).
+`--version`, a parità di `doc-id`: reindicizzare la stessa versione ne sostituisce i chunk invece di duplicarli, mentre una versione diversa si aggiunge alla precedente (con le vecchie versioni che vengono penalizzate dal retriever).
 
-`--model` e `--firmware` finiscono nei metadati di ogni chunk e servono a distinguere manuali di apparecchi diversi in fase di retrieval.
+`--model` e `--firmware` finiscono nei metadati di ogni chunk. `--model` serve a distinguere manuali di apparecchi diversi in fase di retrieval, quando la domanda nomina un modello indicizzato; `--firmware` è un dato di tracciabilità e non filtra la ricerca.
 
 Alla **prima** esecuzione viene scaricato il modello di embedding
 (`intfloat/multilingual-e5-large`, circa 2 GB) nella cache di Hugging Face in
@@ -101,15 +96,9 @@ Indicizzazione (embeddings + BM25 + metadati + bounding box immagini)...
 Completato: printf_f v03 (modello PRINT! F)
 ```
 
-L'indice viene scritto in `data/vectorstore/`: Chroma per i vettori, un JSONL
-con il corpus dei chunk per BM25, SQLite per versioning dei manuali e bounding
-box delle immagini. Per ripartire da zero e' sufficiente cancellare quella
-cartella e rilanciare il comando.
+L'indice viene scritto in `data/vectorstore/`: Chroma per i vettori, un JSONL con il corpus dei chunk per BM25, SQLite per versioning dei manuali e bounding box delle immagini. Per ripartire da zero e' sufficiente cancellare quella cartella e rilanciare il comando.
 
-Il sistema risponde **a turno singolo**: ogni domanda viene interpretata da
-sola, senza storico della conversazione (tranne che per i casi in cui è richiesto un chiarimento). La scelta e' deliberata — il prompt
-resta corto e verificabile, e la risposta e' sempre riconducibile ai soli chunk
-citati. Il sistema è istruito a chiedere un chiarimento quando il contesto non basta.
+Il sistema risponde **a turno singolo**: ogni domanda viene interpretata da sola, senza storico della conversazione (tranne che per i casi in cui è richiesto un chiarimento). La scelta e' deliberata — il prompt resta corto e verificabile, e la risposta e' sempre riconducibile ai soli chunk citati. Il sistema è istruito a chiedere un chiarimento quando il contesto non basta.
 
 ## Avvio del sistema da ambiente python locale
 
@@ -125,8 +114,7 @@ Al termine del processo è possibile avviare il server web tramite il seguente c
 streamlit run app.py --server.fileWatcherType none
 ```
 
-Il flag spegne il file watcher di Streamlit, che serve solo a ricaricare l'app
-quando si modifica il codice.
+Il flag spegne il file watcher di Streamlit, che serve solo a ricaricare l'app quando si modifica il codice.
 
 ## Avvio del sistema con Docker
 
@@ -144,9 +132,7 @@ docker compose up
 
 ## Eval
 
-Le prestazioni del sistema si misurano con lo script di valutazione end-to-end,
-che interroga il sistema completo su 40 domande etichettate in
-[eval/eval_set.jsonl](eval/eval_set.jsonl):
+Le prestazioni del sistema si misurano con lo script di valutazione end-to-end, che interroga il sistema completo su 40 domande etichettate in [eval/eval_set.jsonl](eval/eval_set.jsonl):
 
 ```bash
 python scripts/eval.py
@@ -162,12 +148,11 @@ Risultati di riferimento:
 | retrieval, media a regime | 194 ms |
 | risposta completa, media a regime | 4870 ms |
 
-Metriche per classe, tempi per fase e per tipo di risposta, robustezza ai refusi
-e condizioni della misura sono in [docs/valutazione-prestazioni.md](docs/valutazione-prestazioni.md).
+Metriche per classe, tempi per fase e per tipo di risposta e condizioni della misura sono in [docs/valutazione-prestazioni.md](docs/valutazione-prestazioni.md).
 
 ## Approfondimenti
 
-- [Normalizzazione della query](docs/normalizzazione-query.md) — questo documento spiega come la domanda dell'utente viene ripulita prima del retrieval: estrazione dei metadati, correzione dei refusi sulle parole del manuale indicizzato, riconoscimento dei termini per l'espansione sinonimica, e le misure con cui i due stadi sono stati tarati.
+- [Normalizzazione della query](docs/normalizzazione-query.md) — questo documento spiega come la domanda dell'utente viene ripulita prima del retrieval: estrazione dei metadati, correzione dei refusi sulle parole del manuale indicizzato, riconoscimento dei termini per l'espansione sinonimica, e la misura con cui è stata tarata la soglia di frequenza della correzione dei refusi.
 - [La soglia del gate di dominio](docs/soglia-gate-dominio.md) — questo documento spiega che cosa si intende con gate di dominio e come si ricava il numero in `OFF_TOPIC_SIMILARITY_THRESHOLD`.
 - [Fusione RRF e reranker](docs/rrf-e-reranker.md) — questo documento argomenta la logica dietro il sistema di reranking e perche' il gruppo di candidati resta a 5 (come indicato nel file di configurazione).
 

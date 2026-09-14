@@ -44,7 +44,7 @@ Il retriever denso è un **bi-encoder**: domanda e chunk vengono trasformati in 
 
 Il reranker è invece un **cross-encoder**: domanda e chunk vengono concatenati in un'unica sequenza ed attraversano il transformer *insieme*. Ogni parola della domanda può fare `attenzione` su ogni parola del chunk, strato dopo strato: il modello legge la coppia come la leggerebbe una persona, chiedendosi se quel paragrafo risponde a quella domanda.
 
-Il reranker è molto più accurato, ma non si può precalcolare: serve un'esecuzione completa del modello per ogni coppia domanda-risposta. Su tutti i chunk sarebbe troppo lento; sui migliori 5 costa invece circa 80 ms. Da qui i due stadi: il primo scarta rapidamente quasi tutto il manuale, il secondo giudica con cura ciò che resta.
+Il reranker è molto più accurato, ma non si può precalcolare: serve un'esecuzione completa del modello per ogni coppia domanda-chunk. Su tutti i chunk sarebbe troppo lento; sui migliori 5 costa invece circa 80 ms. Da qui i due stadi: il primo scarta rapidamente quasi tutto il manuale, il secondo giudica con cura ciò che resta.
 
 ## Cos'è il punteggio del reranker
 

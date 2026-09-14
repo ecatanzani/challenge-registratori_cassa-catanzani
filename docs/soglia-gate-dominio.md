@@ -17,8 +17,7 @@ soglia = min( minimo delle domande con risposta nel manuale − margine,
               minimo delle vicine non documentate)
 ```
 
-Il margine non è fissato a mano: lo script lo ricava dai dati. Il procedimento e i
-valori di oggi sono nella sezione [Estrazione dei valori puntuali](#estrazione-dei-valori-puntuali).
+Il margine non è fissato a mano: lo script lo ricava dai dati. Il procedimento ed i valori di oggi sono nella sezione [Estrazione dei valori puntuali](#estrazione-dei-valori-puntuali).
 
 Il gate di dominio deve essere visto come **un'ottimizzazione di costo**: evita una chiamata LLM sulle domande palesemente estranee. 
 
@@ -27,7 +26,7 @@ Gli errori che questo gate può causare non sono simmetrici:
 | errore | cosa succede | costo |
 |---|---|---|
 | **blocca una domanda legittima** | l'operatore, con la cassa ferma, si sente rispondere *"questa domanda non riguarda i manuali"* | aiuto negato: il fallimento peggiore del sistema |
-| **lascia passare una domanda estranea** | una chiamata LLM in più, che finisce comunque in un rifiuto corretto grazie al grounding | qualche centesimo; la risposta all'utente resta giusta |
+| **lascia passare una domanda estranea** | una chiamata LLM in più, che finisce comunque in un rifiuto corretto, perché il prompt impone all'LLM il fallback quando i frammenti non coprono la domanda | qualche centesimo; la risposta all'utente resta giusta |
 
 Questo gate non serve a garantire la correttezza delle risposte, che è invece il compito della funzione di **grounding** (`_validate_grounding()` in `chain.py`, che scarta ogni passo che citi un `chunk_id` non realmente recuperato).
 
@@ -37,8 +36,7 @@ L'eval set etichetta ogni domanda con un `kind`, e i tre valori hanno ruoli dive
 
 **`rispondibile` — vincolo forte.** La risposta esiste nel manuale; bloccarne una nega assistenza.
 
-**`vicina_non_documentata` — vincolo debole.** Argomento plausibile in un punto vendita ma assente da questo manuale: POS, lotteria scontrini, inventario. Bloccarle non sarebbe un risparmio neutro ma un **degrado**: il gate darebbe un
-rifiuto generico con FAQ scollegate, mentre lasciandole passare l'LLM produce un rifiuto specifico con FAQ ricavate dai chunk davvero recuperati.
+**`vicina_non_documentata` — vincolo debole.** Argomento plausibile in un punto vendita ma assente da questo manuale: POS, lotteria scontrini, inventario. Bloccarle non sarebbe un risparmio neutro ma un **degrado**: il gate darebbe un rifiuto generico con FAQ scollegate, mentre lasciandole passare l'LLM produce un rifiuto specifico con FAQ ricavate dai chunk davvero recuperati.
 
 **`fuori_tema` — la misura, non un vincolo.** Nessun rapporto col dominio. Non entrano nel calcolo: sono l'unica classe su cui il gate ha un beneficio da dimostrare, e l'unica su cui misurarlo è metodologicamente pulito.
 
@@ -46,8 +44,7 @@ rifiuto generico con FAQ scollegate, mentre lasciandole passare l'LLM produce un
 
 Lo script `scripts/calibrate_threshold.py` ricava tutti i numeri della formula dall'eval set (`eval/eval_set.jsonl`), in quattro passi.
 
-**1. Il punteggio di ogni domanda.** Per ciascuna delle 40 domande lo script calcola `compute_relevance_score()`: la similarità coseno fra la domanda, normalizzata come a runtime, e il chunk più vicino dell'indice. È lo stesso
-numero che il gate confronta con la soglia quando l'app riceve una domanda.
+**1. Il punteggio di ogni domanda.** Per ciascuna delle 40 domande lo script calcola `compute_relevance_score()`: la similarità coseno fra la domanda, normalizzata come a runtime, e il chunk più vicino dell'indice. È lo stesso numero che il gate confronta con la soglia quando l'app riceve una domanda.
 
 Raggruppati per classe:
 
@@ -58,8 +55,7 @@ fuori tema               : n=6   min 0.7637  max 0.8097
 ```
 
 **2. Gli scarti, per stimare quanto una domanda nuova può cadere più in basso.**
-Il minimo delle 24 domande con risposta dice solo quanto in basso arrivano quelle che conosciamo; una domanda legittima formulata diversamente può però fare peggio. Per stimare di quanto, lo script simula l'arrivo di domande nuove
-(`calcola_scarti()`):
+Il minimo delle 24 domande con risposta dice solo quanto in basso arrivano quelle che conosciamo; una domanda legittima formulata diversamente può però fare peggio. Per stimare di quanto, lo script simula l'arrivo di domande nuove (`calcola_scarti()`):
 
 - sceglie a caso metà delle domande con risposta, 12 su 24, e ne prende il punteggio minimo come se fossero le uniche note;
 - guarda le altre 12 e, per ognuna che cade **sotto** quel minimo, registra di quanto: è uno *scarto*;
