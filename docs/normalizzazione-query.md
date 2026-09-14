@@ -26,7 +26,7 @@ sono stati tarati.
 ```mermaid
 flowchart TD
     Q["Query dell'operatore<br/>'Come cambio il piedino in fondo allo scontrino?'"]
-    Q --> EX["Estrazione con regex<br/>modello · firmware · codici errore<br/>avviene PRIMA di ogni correzione"]
+    Q --> EX["Estrazione di modello, firmware e codici errore<br/>avviene PRIMA di ogni correzione"]
     EX --> TOK["Tokenizzazione<br/>minuscole, solo caratteri alfanumerici"]
     TOK --> PROT["Marcatura di <br/>token con cifre e codici errore:<br/>'E60' non va corretto in 'E80'"]
     PROT --> COR{"La parola è nota al manuale<br/>o è italiano corretto?"}
@@ -175,7 +175,7 @@ giornaliera`), ricavati dalle 18 famiglie di sinonimi dichiarate in cima al file
 La domanda «Come faccio uno strono scontrino?», con `strono` al posto di
 `storno`. Questi sono i passi, eseguendo `normalize_query()`.
 
-**1. Estrazione con regex**: nessun modello, nessun firmware, nessun codice errore.
+**1. Estrazione dei metadati**: Il modello si riconosce confrontando la domanda con i modelli presenti nell'indice, senza badare a maiuscole, spazi e punteggiatura: «PRINT! F», «print f» e «printf» indicano lo stesso modello. Allo stesso modo un codice errore conta solo se compare nei manuali indicizzati, e va scritto attaccato (`E60`, `E-60`) oppure dopo «errore» o «codice» («errore e 60», «codice errore 43»): così «20 e 20» o «modello X1» non vengono letti come codici.
 
 **2. Tokenizzazione**: `['come', 'faccio', 'uno', 'strono', 'scontrino']`, nessun
 token protetto perché non ci sono cifre.

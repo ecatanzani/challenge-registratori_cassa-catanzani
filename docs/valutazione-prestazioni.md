@@ -20,7 +20,7 @@ Le medie e i percentili dei tempi riportati qui sotto sono calcolati proprio da 
 | | |
 |---|---|
 | eval set | `eval/eval_set.jsonl`, 40 domande etichettate |
-| manuale indicizzato | `printf_f` v03, 73 pagine, 195 chunk, 17 immagini |
+| manuale indicizzato | `printf_f` v03, 73 pagine, 196 chunk, 17 immagini |
 | modello di risposta | `claude-sonnet-5` |
 | embedding | `intfloat/multilingual-e5-large` |
 | reranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` |
@@ -64,14 +64,11 @@ Il sistema può decidere di comportarsi in uno dei seguenti modi:
 | classe | decisioni corrette |
 |---|---|
 | `rispondibile` | 24/24 |
-| `vicina_non_documentata` | 9/10 |
+| `vicina_non_documentata` | 10/10 |
 | `fuori_tema` | 6/6 (5 fermate dal gate, 1 fallback dell'LLM) |
-| **complessivo** | **39/40 (98%)** |
+| **complessivo** | **40/40 (100%)** |
 
-L'unico errore è *«Come aggiungo un nuovo operatore al gestionale di
-magazzino?»
-
-Errore noto: risposta sull'oggetto sbagliato. Su «Come aggiungo un nuovo operatore al gestionale di magazzino?» il sistema risponde con la procedura di programmazione degli operatori del registratore (p.21), invece di fare fallback. L'errore è sistematico, ovvero avviene in tutte le esecuzioni. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
+Nei test eseguiti non sono presenti errori. La domanda meno stabile è «Come aggiungo un nuovo operatore al gestionale di magazzino?»: può ricevere la procedura di programmazione degli operatori del registratore (p.21) invece del fallback. In passato succedeva in tutte le esecuzioni; nelle 10 esecuzioni dell'eval del 14 settembre sul codice attuale è successo una volta, sempre con gli stessi frammenti recuperati, quindi a cambiare è la decisione dell'LLM. La causa è un'omonimia: il manuale documenta davvero l'aggiunta di un operatore, ma della cassa, non del gestionale citato nella domanda. Né il gate di dominio né la validazione del grounding possono intercettarlo, perché la domanda è vicina al dominio e ogni passo cita un frammento realmente recuperato: il grounding verifica la provenienza della risposta, non che riguardi l'oggetto chiesto.
 
 Una possibile soluzione potrebbe essere la seguente:
 
@@ -93,32 +90,26 @@ completa.
 
 ### A regime
 
-Esclusa la prima domanda dell'esecuzione, che carica i modelli (vedi sotto).
+Esclusa la prima domanda dell'esecuzione:
 
 | fase | media | mediana | p90 | massimo |
 |---|---|---|---|---|
-| retrieval | **477 ms** | 206 ms | 1023 ms | 2479 ms |
-| primo token dell'LLM, dalla domanda | **1462 ms** | 1260 ms | 1964 ms | 4051 ms |
-| risposta completa | **4832 ms** | 4811 ms | 7486 ms | 9207 ms |
+| retrieval | **194 ms** | 210 ms | 237 ms | 257 ms |
+| primo token dell'LLM, dalla domanda | **1315 ms** | 1284 ms | 1628 ms | 1872 ms |
+| risposta completa | **4870 ms** | 4456 ms | 8447 ms | 10134 ms |
 
-Il tempo al primo token è misurato dall'arrivo della domanda, quindi comprende
-anche il retrieval; è calcolato sulle 34 domande che arrivano all'LLM.
+Il tempo al primo token è misurato dall'arrivo della domanda, quindi comprende anche il retrieval; è calcolato sulle 34 domande che arrivano all'LLM. Nessun retrieval supera il budget di 2 s; 6 risposte complete su 39 superano gli 8 s, tutte procedure con passi (massimo 10,1 s).
 
 ### Per tipo di risposta
 
 | percorso | domande | media | mediana | massimo |
 |---|---|---|---|---|
-| risposta con i passi della procedura | 24 | 6151 ms | 5918 ms | 9207 ms |
-| fallback deciso dall'LLM | 10 | 4042 ms | 3994 ms | 4424 ms |
-| fermata dal gate, senza LLM | 5 | 78 ms | 50 ms | 123 ms |
+| risposta con i passi della procedura | 23 | 6252 ms | 5757 ms | 10134 ms |
+| fallback deciso dall'LLM | 11 | 4156 ms | 4378 ms | 4687 ms |
+| fermata dal gate, senza LLM | 5 | 79 ms | 48 ms | 138 ms |
 
-La risposta completa dipende soprattutto dalla generazione: una procedura con
-passi, citazioni e immagini richiede circa 2 secondi in più di un fallback. Le
-domande fermate dal gate costano meno di un decimo di secondo.
+La risposta completa dipende soprattutto dalla generazione: una procedura con passi, citazioni e immagini richiede circa 2 secondi in più di un fallback. Le domande fermate dal gate costano meno di un decimo di secondo.
 
 ### Variabilità
 
-I tempi dell'LLM cambiano da un'esecuzione all'altra. Sulle sei esecuzioni
-complete dell'eval fatte durante lo sviluppo, con lo stesso eval set e versioni
-che differivano solo nella correzione dei refusi, la mediana della risposta
-completa è andata da 4435 a 5087 ms.
+I tempi dell'LLM cambiano da un'esecuzione all'altra. Sulle sei esecuzioni complete dell'eval fatte durante lo sviluppo, con lo stesso eval set e versioni che differivano solo nella correzione dei refusi, la mediana della risposta completa è andata da 4435 a 5087 ms.

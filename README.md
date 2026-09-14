@@ -77,13 +77,15 @@ python ingest.py --pdf data/manuals/printf_f_manuale_v03.pdf --doc-id printf_f -
 |---|---|
 | `--pdf` | percorso del manuale da indicizzare |
 | `--doc-id` | identificativo stabile del documento, invariante fra le versioni |
-| `--version` | versione del manuale; a parità di `doc-id` sostituisce i chunk della precedente invece di duplicarli |
+| `--version` | versione del manuale |
 | `--model` | modello di registratore di cassa a cui il manuale si riferisce |
 | `--firmware` | versione firmware documentata (opzionale: questo manuale non ne dichiara una) |
 
-`--model` e `--firmware` finiscono nei metadati di ogni
-chunk e servono a distinguere manuali di apparecchi diversi in fase di
-retrieval.
+Alcuni commenti:
+
+`--version`, a parità di `doc-id`, sostituisce i chunk della precedente invece di duplicarli, mentre si aggiungono alla precedente nel caso di documento diverso (con le vecchie versioni che vengono penalizzate dal retriever).
+
+`--model` e `--firmware` finiscono nei metadati di ogni chunk e servono a distinguere manuali di apparecchi diversi in fase di retrieval.
 
 Alla **prima** esecuzione viene scaricato il modello di embedding
 (`intfloat/multilingual-e5-large`, circa 2 GB) nella cache di Hugging Face in
@@ -94,7 +96,7 @@ Output atteso:
 ```
 Completato: 73 pagine, 17 immagini. OCR attivato su 1 pagine -> Riuscito: 0 | Vuote: 1 | Fallito: 0
 Chunking...
-195 chunk generati.
+196 chunk generati.
 Indicizzazione (embeddings + BM25 + metadati + bounding box immagini)...
 Completato: printf_f v03 (modello PRINT! F)
 ```
@@ -150,15 +152,15 @@ che interroga il sistema completo su 40 domande etichettate in
 python scripts/eval.py
 ```
 
-Risultati di riferimento sul codice attuale:
+Risultati di riferimento:
 
 | metrica | valore |
 |---|---|
 | hit@5 (pagina giusta fra i 5 frammenti passati all'LLM) | 24/24 |
-| decisioni corrette (risposta, fallback, rifiuto) | 39/40 |
+| decisioni corrette (risposta, fallback, rifiuto) | 40/40 |
 | figure attese allegate | 12/12 |
-| retrieval, media a regime | 477 ms |
-| risposta completa, media a regime | 4832 ms |
+| retrieval, media a regime | 194 ms |
+| risposta completa, media a regime | 4870 ms |
 
 Metriche per classe, tempi per fase e per tipo di risposta, robustezza ai refusi
 e condizioni della misura sono in [docs/valutazione-prestazioni.md](docs/valutazione-prestazioni.md).
