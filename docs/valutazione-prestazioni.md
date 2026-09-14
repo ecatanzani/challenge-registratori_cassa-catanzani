@@ -55,7 +55,7 @@ MRR sta per *Mean Reciprocal Rank*; è una metrica usata nei sistemi di Informat
 Il sistema può decidere di comportarsi in uno dei seguenti modi:
 
 - Rispondere: se la query passa il gate di dominio
-- Fallback: se la query passa il gate di dominio ma la query non è aderente al manuale
+- Fallback: se la query passa il gate di dominio ma la query non è aderente al manuale o il sistema necessita di ulteriori spiegazioni
 - Rifiutare di rispondere: se la query non passa il gate di dominio
 
 
