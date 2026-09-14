@@ -3,6 +3,7 @@
 
 import json
 import sys
+import statistics
 from collections import defaultdict
 from pathlib import Path
 
@@ -76,11 +77,11 @@ def main() -> None:
 
     if e2e:
         e2e.sort()
-        logger.info(f"\nLatenza E2E: mediana {e2e[len(e2e) // 2]} ms, max {e2e[-1]} ms "
+        logger.info(f"\nLatenza E2E: media {statistics.mean(e2e):.1f} mediana {e2e[len(e2e) // 2]} ms, max {e2e[-1]} ms "
               f"(budget: <8000 ms)")
     if ttft:
         ttft.sort()
-        logger.info(f"Primo token: mediana {ttft[len(ttft) // 2]} ms (misurato dalla domanda)")
+        logger.info(f"Primo token: media {statistics.mean(ttft):.1f} mediana {ttft[len(ttft) // 2]} ms (misurato dalla domanda)")
     if errs:
         logger.info(f"\n{len(errs)} query terminate con errore:")
         for e in errs:
